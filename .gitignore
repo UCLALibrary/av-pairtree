@@ -1,4 +1,7 @@
 
+# Local versions of files that shouldn't be committed
+config.properties
+
 # Maven build artifacts
 target/
 src/main/generated

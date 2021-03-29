@@ -4,15 +4,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>[%level] %logger{45} | %msg%n</pattern>
-    </encoder>
-  </appender>
-
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>target/vertx-template-${byDay}.log</file>
-    <append>false</append>
-    <encoder>
-      <pattern>[%level] %logger{45} | %msg%n</pattern>
+      <pattern>[%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -26,6 +18,18 @@
     <appender-ref ref="STDOUT" />
   </logger>
   <logger name="io.swagger.v3.parser" level="WARN" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+  <logger name="io.methvin.watcher" level="WARN" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+  <logger name="org.csveed" level="WARN" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+  <logger name="ws.schild.jave.ConversionOutputAnalyzer" level="INFO" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+  <logger name="ws.schild.jave.process.ffmpeg.DefaultFFMPEGLocator" level="INFO" additivity="false">
     <appender-ref ref="STDOUT" />
   </logger>
 
