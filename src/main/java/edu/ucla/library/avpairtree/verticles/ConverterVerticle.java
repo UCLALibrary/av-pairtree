@@ -18,7 +18,6 @@ import edu.ucla.library.avpairtree.Op;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonObject;
 import ws.schild.jave.Encoder;
 import ws.schild.jave.MultimediaObject;
@@ -67,7 +66,6 @@ public class ConverterVerticle extends AbstractVerticle {
 
     @Override
     public void start(final Promise<Void> aPromise) {
-        final DeliveryOptions options = new DeliveryOptions().setSendTimeout(Integer.MAX_VALUE);
         final JsonObject config = config();
         final String sourceDir = config.getString(Config.SOURCE_DIR);
         final Vertx vertx = getVertx();
@@ -96,22 +94,7 @@ public class ConverterVerticle extends AbstractVerticle {
                 encoder.encode(new MultimediaObject(inputFilePath.toFile()), outputFilePath.toFile(), encoding);
                 csvItem.setFilePath(outputFilePath.toAbsolutePath().toString());
 
-                // Send our converted file to the Pairtree verticle for placement in the A/V Pairtree
-                vertx.eventBus().request(PairtreeVerticle.class.getName(), csvItem, options).onSuccess(result -> {
-                    // Clean up our converted file after it has been successfully put into the Pairtree
-                    vertx.fileSystem().delete(outputFilePath.toAbsolutePath().toString()).onComplete(deletion -> {
-                        if (deletion.succeeded()) {
-                            // If our scratch space file was cleaned up, report the success back to the watcher
-                            message.reply(result.body());
-                        } else {
-                            LOGGER.error(deletion.cause(), deletion.cause().getMessage());
-                            message.fail(Op.ERROR_CODE, deletion.cause().getMessage());
-                        }
-                    });
-                }).onFailure(error -> {
-                    LOGGER.error(error, error.getMessage());
-                    message.fail(Op.ERROR_CODE, error.getMessage());
-                });
+                message.reply(csvItem);
             } catch (final Exception details) {
                 LOGGER.error(details, details.getMessage());
                 message.fail(Op.ERROR_CODE, details.getMessage());

@@ -66,7 +66,14 @@ public class WatcherVerticle extends AbstractVerticle {
                     item.setPathRoot(item.getFilePath());
 
                     if (item.isAudio()) { // Audio gets converted from wav to a more Web-friendly format
-                        futures.add(eventBus.request(ConverterVerticle.class.getName(), item, options));
+                        final Promise<Message<Object>> promise = Promise.promise();
+
+                        // Insert our promise into the queue before we do any future work
+                        futures.add(promise.future());
+
+                        convertAudioFile(item, options).onSuccess(convertedItem -> {
+                            storeAudioFile(promise, convertedItem, options);
+                        }).onFailure(error -> promise.fail(error));
                     } else if (item.isVideo()) { // Videos are already in mp4 format so don't need conversion
                         futures.add(eventBus.request(PairtreeVerticle.class.getName(), item, options));
                     } // else, ignore
@@ -80,7 +87,7 @@ public class WatcherVerticle extends AbstractVerticle {
                         final CsvItem item = ((Message<CsvItem>) object).body();
                         final String ark = item.getItemARK();
 
-                        LOGGER.info(MessageCodes.AVPT_009, ark);
+                        LOGGER.info(MessageCodes.AVPT_009, ark, item.getFilePath());
                         arkMap.put(ark, item);
                     });
 
@@ -96,6 +103,47 @@ public class WatcherVerticle extends AbstractVerticle {
         });
 
         aPromise.complete();
+    }
+
+    /**
+     * Sends the audio file to the PairtreeVerticle for placement in the tree.
+     *
+     * @param aPromise A promise that the audio file will be stored in the Pairtree
+     * @param aCsvItem A CSV item whose file should be stored
+     * @param aConfig A delivery configuration
+     * @return The stored CSV item
+     */
+    private void storeAudioFile(final Promise<Message<Object>> aPromise, final CsvItem aCsvItem,
+        final DeliveryOptions aConfig) {
+        getVertx().eventBus().request(PairtreeVerticle.class.getName(), aCsvItem, aConfig).onSuccess(result -> {
+            final CsvItem csvItem = (CsvItem) result.body();
+
+            // Clean up our converted file after it has been successfully put into the Pairtree
+            vertx.fileSystem().delete(csvItem.getFilePath()).onComplete(deletion -> {
+                if (deletion.succeeded()) {
+                    aPromise.complete(result);
+                } else {
+                    aPromise.fail(deletion.cause());
+                }
+            });
+        }).onFailure(error -> aPromise.fail(error));
+    }
+
+    /**
+     * Converts the CSV item's audio file.
+     *
+     * @param aCsvItem A CSV item
+     * @param aConfig A delivery configuration
+     * @return A future with the converted audio file
+     */
+    private Future<CsvItem> convertAudioFile(final CsvItem aCsvItem, final DeliveryOptions aConfig) {
+        final Promise<CsvItem> promise = Promise.promise();
+
+        getVertx().eventBus().request(ConverterVerticle.class.getName(), aCsvItem, aConfig).onSuccess(conversion -> {
+            promise.complete((CsvItem) conversion.body());
+        }).onFailure(error -> promise.fail(error));
+
+        return promise.future();
     }
 
     /**

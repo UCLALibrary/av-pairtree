@@ -1,6 +1,8 @@
 
 package edu.ucla.library.avpairtree.verticles;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -16,6 +18,7 @@ import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.MessageCodes;
 
 import io.vertx.config.ConfigRetriever;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -84,6 +87,28 @@ public abstract class AbstractAvPtTest {
      * @return The test's logger
      */
     protected abstract Logger getLogger();
+
+    /**
+     * Undeploys multiple verticles.
+     *
+     * @param aVerticleNameArray A verticle name array
+     * @return Whether all verticles were able to be undeployed
+     */
+    protected Future<Void> undeployVerticles(final String... aVerticleNameArray) {
+        final Promise<Void> promise = Promise.promise();
+        @SuppressWarnings("rawtypes")
+        final List<Future> futures = new ArrayList<>();
+
+        for (final String verticleName : aVerticleNameArray) {
+            futures.add(undeployVerticle(verticleName));
+        }
+
+        CompositeFuture.all(futures).onSuccess(undeploys -> {
+            promise.complete();
+        }).onFailure(error -> promise.fail(error));
+
+        return promise.future();
+    }
 
     /**
      * Undeploy a verticle so that a test can swap in a mock.

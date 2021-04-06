@@ -1,7 +1,6 @@
 
 package edu.ucla.library.avpairtree.verticles;
 
-import static edu.ucla.library.avpairtree.AvPtConstants.SYSTEM_TMP_DIR;
 import static org.junit.Assert.assertEquals;
 
 import java.nio.file.Path;
@@ -12,6 +11,7 @@ import org.junit.runner.RunWith;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
+import edu.ucla.library.avpairtree.AvPtConstants;
 import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.MessageCodes;
 
@@ -40,26 +40,19 @@ public class ConverterVerticleTest extends AbstractAvPtTest {
         final Async asyncTask = aContext.async();
         final Vertx vertx = myContext.vertx();
 
-        // Replace the verticle that receives the watcher verticle's video output with our simple mock verticle
-        undeployVerticle(PairtreeVerticle.class.getName()).onSuccess(undeploy -> {
-            final CsvItem csvItem = new CsvItem();
+        final CsvItem csvItem = new CsvItem();
 
-            // Create the CSV item we want the converter verticle to process
-            csvItem.setItemARK("ark:/21198/zz002dvxmm");
-            csvItem.setFilePath("soul/audio/uclapasc.wav");
+        // Create the CSV item we want the converter verticle to process
+        csvItem.setItemARK("ark:/21198/zz002dvxmm");
+        csvItem.setFilePath("soul/audio/uclapasc.wav");
 
-            vertx.eventBus().<CsvItem>consumer(PairtreeVerticle.class.getName()).handler(message -> {
-                final Path expectedFilePath = Path.of(SYSTEM_TMP_DIR, "av-pairtree-/uclapasc.mp4");
-                final CsvItem found = message.body();
+        // Send a message with the CSV file location to the converter verticle
+        vertx.eventBus().request(ConverterVerticle.class.getName(), csvItem).onSuccess(conversion -> {
+            final CsvItem convertedItem = (CsvItem) conversion.body();
+            final Path path = Path.of(AvPtConstants.SYSTEM_TMP_DIR, ConverterVerticle.SCRATCH_SPACE, "uclapasc.mp4");
 
-                assertEquals(expectedFilePath.toString(), found.getFilePath());
-                message.reply(found);
-            });
-
-            // Send a message with the CSV file location to the watcher verticle
-            vertx.eventBus().request(ConverterVerticle.class.getName(), csvItem).onSuccess(conversion -> {
-                complete(asyncTask);
-            }).onFailure(error -> aContext.fail(error));
+            assertEquals(path.toAbsolutePath().toString(), convertedItem.getFilePath());
+            complete(asyncTask);
         }).onFailure(error -> aContext.fail(error));
     }
 
