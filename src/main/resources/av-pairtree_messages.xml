@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<properties>
+  <entry key="message-class-name">edu.ucla.library.avpairtree.MessageCodes</entry>
+
+  <entry key="AVPT_001">Server started and listening at port {}</entry>
+  <entry key="AVPT_002">Verticle undeployed for testing purposes: {} [{}]</entry>
+  <entry key="AVPT_003">Running test: {}</entry>
+  <entry key="AVPT_004">Compared CSV items did not match as expected</entry>
+  <entry key="AVPT_005">Temporary directory for file conversions created: {}</entry>
+  <entry key="AVPT_006">CSV file successfully updated: {}</entry>
+  <entry key="AVPT_007">Unable to delete file created by the test: {}</entry>
+  <entry key="AVPT_008">CSV file received for processing: {}</entry>
+  <entry key="AVPT_009">Media file asssociated with '{}' was successfully processed</entry>
+  <entry key="AVPT_010">IIIF access URL created for '{}': {}</entry>
+  <entry key="AVPT_011">{} worker starting in: {}</entry>
+  <entry key="AVPT_012">{} worker pool size set to '{}' workers</entry>
+
+</properties>
