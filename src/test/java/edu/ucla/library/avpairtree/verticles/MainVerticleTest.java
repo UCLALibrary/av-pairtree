@@ -42,7 +42,7 @@ public class MainVerticleTest extends AbstractAvPtTest {
         final Async asyncTask = aContext.async();
 
         // Try to connect to the status endpoint to see if it responds the way we'd expect
-        client.get(myPort, TestConstants.INADDR_ANY, "/status").send(get -> {
+        client.get(myPort, "localhost", "/status").send(get -> {
             if (get.succeeded()) {
                 aContext.assertEquals(HTTP.OK, get.result().statusCode());
                 complete(asyncTask);

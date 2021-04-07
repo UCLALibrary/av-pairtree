@@ -50,7 +50,7 @@ public class MainVerticle extends AbstractVerticle {
     /**
      * The location of the OpenAPI specification for this application.
      */
-    private static final String API_SPEC = "src/main/resources/av-pairtree.yaml";
+    private static final String API_SPEC = "src/main/resources/av-pairtree-openapi.yaml";
 
     /**
      * A default number of worker threads to use.
