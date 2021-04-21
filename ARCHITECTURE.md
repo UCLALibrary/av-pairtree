@@ -14,7 +14,7 @@ After all the A/V files in a CSV file have been processed, the input CSV is upda
 
 ## Expected CSV Structure
 
-A CSV file that is going to be processed by av-pairtree should have two required columns: `File Name` and `ItemARK`. The first is used to retrieve the media file to be processed and the second is used to create the Pairtree structure. If the file has been previously processed (or has been processed by the Bucketeer application), it will also have a `IIIF Access URL` column. That's fine. However, older CSV files may have 'iiif_access_url` as a column header. Any CSVs with that column header should be manually updated before processing with av-pairtree.
+A CSV file that is going to be processed by av-pairtree should have two required columns: `File Name` and `ItemARK`. The first is used to retrieve the media file to be processed and the second is used to create the Pairtree structure. If the file has been previously processed (or has been processed by the Bucketeer application), it will also have a `IIIF Access URL` column. That's fine. However, older CSV files may have `iiif_access_url` as a column header. Any CSVs with that column header should be manually updated before processing with av-pairtree.
 
 ## Code Map
 
