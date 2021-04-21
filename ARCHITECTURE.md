@@ -33,7 +33,7 @@ The basic structure of this particular Vert.x program includes: verticles, handl
 | CsvItem | This is an object which represents a single item (or row) from the CSV file | [src/main/java/edu/ucla/library/avpairtree/CsvItem.java](https://github.com/UCLALibrary/av-pairtree/blob/main/src/main/java/edu/ucla/library/avpairtree/CsvItem.java) |
 | CsvItemCodec | This codec implements a JSON (de)serialization of CsvItem so that it can be sent over the event bus | [src/main/java/edu/ucla/library/avpairtree/CsvItemCodec.java](https://github.com/UCLALibrary/av-pairtree/blob/main/src/main/java/edu/ucla/library/avpairtree/CsvItemCodec.java) |
 
-Actions (e.g., the parsing CSV files, conversion of media files, or storage of media files in a Pairtree structure, etc.) are performed by the application's various verticles (e.g., WatcherVerticle, ConverterVerticle, PairtreeVerticle, etc.) Cf. the `verticles` directory for examples.
+Actions (e.g., the parsing of CSV files, conversion of media files, or storage of media files in a Pairtree structure, etc.) are performed by the application's various verticles (e.g., WatcherVerticle, ConverterVerticle, PairtreeVerticle, etc.) Cf. the `verticles` directory for examples.
 
 ## Sequence Diagram
 
