@@ -1,0 +1,43 @@
+name: 'Mermaid PR Render'
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/*.mmd'
+
+jobs:
+  mermaid:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+      with:
+        ref: ${{ github.event.pull_request.head.ref }}
+
+    - name: Render Mermaid diagrams to SVG
+      uses: ksclarke/mermaid-cli-action@main # still in development; no releases yet
+      with:
+        mmd-pattern: '**/*.mmd'
+        mmd-output: 'svg'
+
+    - name: Import GPG key
+      uses: crazy-max/ghaction-import-gpg@b0793c0060c97f4ef0efbac949d476c6499b7775 # v3.1.0
+      with:
+        # Put bot's private GPG key and passphrase in the project's secrets so commits will be signed
+        gpg-private-key: ${{ secrets.BUILD_KEY }}
+        passphrase: ${{ secrets.BUILD_PASSPHRASE }}
+        git-user-signingkey: true
+        git-commit-gpgsign: true
+
+    - name: Commit rendered SVG files
+      uses: stefanzweifel/git-auto-commit-action@be7095c202abcf573b09f20541e0ee2f6a3a9d9b # v4.9.2
+      with:
+        file_pattern: '*[.svg]'
+        commit_message: Add automatically rendered Mermaid diagrams
+        # We need to use our bot with its GPG key (added above) because we require signed commits
+        commit_user_name: Services Bot
+        commit_user_email: softwaredev-services@library.ucla.edu

@@ -13,7 +13,7 @@ public final class TestConstants {
     /**
      * A default host address for testing.
      */
-    public static final String INADDR_ANY = "0.0.0.0";
+    public static final String LOCALHOST = "localhost";
 
     /**
      * A watch directory for testing.
