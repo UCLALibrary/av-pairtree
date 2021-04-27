@@ -136,7 +136,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
             final AtomicInteger counter = new AtomicInteger(0);
 
             reader.lines().forEach(line -> {
-                if (line.contains(avServer)) {
+                if (line.contains(avServer) && line.contains(".mp4{}")) {
                     counter.incrementAndGet();
                 }
             });
@@ -147,7 +147,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
             promise.fail(details);
         }
 
-        // Delete the test artifact after we've checked it to determine success
+        // final Delete the test final artifact after we've checked it to determine success
         myContext.vertx().fileSystem().delete(aFileName).onComplete(deletion -> {
             if (deletion.succeeded()) {
                 promise.complete();

@@ -67,6 +67,12 @@ public final class Config {
     public static final String ACCESS_URL_PATTERN = "iiif.access.url";
 
     /**
+     * The configuration property for which substitution pattern in iiif.access.url should be the ID; this is 1-based,
+     * not zero-based.
+     */
+    public static final String ACCESS_URL_ID_INDEX = "iiif.access.url.id.index";
+
+    /**
      * The number of workers that should work to do media file conversions.
      */
     public static final String CONVERSION_WORKERS = "conversion.workers";
