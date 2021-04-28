@@ -136,7 +136,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
             final AtomicInteger counter = new AtomicInteger(0);
 
             reader.lines().forEach(line -> {
-                if (line.contains(avServer)) {
+                if (line.contains(avServer) && line.contains(".mp4{}")) {
                     counter.incrementAndGet();
                 }
             });

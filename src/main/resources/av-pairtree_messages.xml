@@ -17,5 +17,7 @@
   <entry key="AVPT_010">IIIF access URL created for '{}': {}</entry>
   <entry key="AVPT_011">{} worker starting in: {}</entry>
   <entry key="AVPT_012">{} worker pool size set to '{}' workers</entry>
+  <entry key="AVPT_013">Index for IIIF access URL doesn't correspond to number of substitution patterns: {}</entry>
+  <entry key="AVPT_014">IIIF access URL pattern doesn't contain a supported number of substitution patterns</entry>
 
 </properties>

@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.csveed.api.CsvClient;
 import org.csveed.api.CsvClientImpl;
@@ -44,6 +46,8 @@ import io.vertx.core.eventbus.Message;
 public class WatcherVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WatcherVerticle.class, MessageCodes.BUNDLE);
+
+    private static final String SUBSTITUTION_PATTERN = "{}";
 
     @Override
     public void start(final Promise<Void> aPromise) {
@@ -152,7 +156,7 @@ public class WatcherVerticle extends AbstractVerticle {
                         }
 
                         if (aArkMap.containsKey(ark)) {
-                            columns[columnCount] = encodeAccessURL(aArkMap.get(ark));
+                            columns[columnCount] = constructAccessURL(aArkMap.get(ark));
                         }
                     } else {
                         columns = new String[columnCount];
@@ -161,7 +165,7 @@ public class WatcherVerticle extends AbstractVerticle {
                             if (accessUrlIndex != index) {
                                 columns[index] = row.get(index + 1); // Strangely, row is 1-based
                             } else if (aArkMap.containsKey(ark)) {
-                                columns[index] = encodeAccessURL(aArkMap.get(ark));
+                                columns[index] = constructAccessURL(aArkMap.get(ark));
                             }
                         }
                     }
@@ -194,25 +198,95 @@ public class WatcherVerticle extends AbstractVerticle {
     }
 
     /**
-     * Encodes the Pairtree path for the A/V server's access URL.
+     * Encodes the Pairtree path in the A/V server's access URL.
      *
      * @param aCsvItem An item from the CSV file
      * @return An encoded path for the A/V server's access URL
+     * @throws IndexOutOfBoundsException If a supplied ID index position isn't valid
+     * @throws UnsupportedOperationException If the access URL pattern doesn't contain any placeholders
      */
-    private String encodeAccessURL(final CsvItem aCsvItem) {
+    private String constructAccessURL(final CsvItem aCsvItem)
+            throws IndexOutOfBoundsException, UnsupportedOperationException {
         final String arkPrefix = config().getString(Config.PAIRTREE_PREFIX);
         final String ark = aCsvItem.getItemARK();
         final String pathARK = ark.replace(arkPrefix, Constants.EMPTY); // Strip ARK prefix
         final String slug = aCsvItem.getPathRoot();
         final String encodedARK = PairtreeUtils.encodeID(ark);
         final String fileExt = Constants.PERIOD + config().getString(Config.ENCODING_FORMAT);
-        final String accessUrlPattern = config().getString(Config.ACCESS_URL_PATTERN, "{}");
+        final String accessUrlPattern = config().getString(Config.ACCESS_URL_PATTERN, SUBSTITUTION_PATTERN);
+        final int urlPatternIdIndex = config().getInteger(Config.ACCESS_URL_ID_INDEX, 1);
         final String ptPath = PairtreeUtils.mapToPtPath(slug + Constants.SLASH + Pairtree.ROOT, pathARK, pathARK);
-        final String ptFile = (ptPath + Constants.SLASH + encodedARK + fileExt).replace(Constants.PLUS, "%2B");
-        final String accessURL = StringUtils.format(accessUrlPattern, ptFile);
+        final String ptFilePath = (ptPath + Constants.SLASH + encodedARK + fileExt).replace(Constants.PLUS, "%2B");
+        final String accessURL = addIdPath(accessUrlPattern, urlPatternIdIndex, ptFilePath);
 
         LOGGER.debug(MessageCodes.AVPT_010, ark, accessURL);
 
         return accessURL;
+    }
+
+    /**
+     * Gets the IIIF access URL.
+     *
+     * @param aAccessUrlPattern A textual pattern to use for the IIIF access URL
+     * @param aUrlPatternIdIndex A position for the ID in the access URL pattern
+     * @param aIdPath An ID's Pairtree path
+     * @return The IIIF access URL
+     * @throws IndexOutOfBoundsException If a supplied ID index position isn't valid
+     * @throws UnsupportedOperationException If the access URL pattern doesn't contain any placeholders
+     */
+    private String addIdPath(final String aAccessUrlPattern, final int aUrlPatternIdIndex, final String aIdPath)
+            throws IndexOutOfBoundsException, UnsupportedOperationException {
+        final int substitutionCount = countSubstitutionPatterns(aAccessUrlPattern);
+
+        // We allow up to three path substitutions, with the Pairtree path being able to be swapped into any of them
+        switch (substitutionCount) {
+            case 3:
+                if (aUrlPatternIdIndex == 1) {
+                    return StringUtils.format(aAccessUrlPattern, aIdPath, SUBSTITUTION_PATTERN, SUBSTITUTION_PATTERN);
+                } else if (aUrlPatternIdIndex == 2) {
+                    return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, aIdPath, SUBSTITUTION_PATTERN);
+                } else if (aUrlPatternIdIndex == 3) {
+                    return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, SUBSTITUTION_PATTERN, aIdPath);
+                } else {
+                    throw new IndexOutOfBoundsException(LOGGER.getMessage(MessageCodes.AVPT_013, aUrlPatternIdIndex));
+                }
+            case 2:
+                if (aUrlPatternIdIndex == 1) {
+                    return StringUtils.format(aAccessUrlPattern, aIdPath, SUBSTITUTION_PATTERN);
+                } else if (aUrlPatternIdIndex == 2) {
+                    return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, aIdPath);
+                } else {
+                    throw new IndexOutOfBoundsException(LOGGER.getMessage(MessageCodes.AVPT_013, aUrlPatternIdIndex));
+                }
+            case 1:
+                if (aUrlPatternIdIndex == 1) {
+                    return StringUtils.format(aAccessUrlPattern, aIdPath);
+                } else {
+                    throw new IndexOutOfBoundsException(LOGGER.getMessage(MessageCodes.AVPT_013, aUrlPatternIdIndex));
+                }
+            default:
+                throw new UnsupportedOperationException(LOGGER.getMessage(MessageCodes.AVPT_013, substitutionCount));
+        }
+    }
+
+    /**
+     * Counts the number of substitution patterns in the supplied string.
+     *
+     * @param aString A string with substitution patterns (e.g. <code>{}</code>)
+     * @return The number of substitution patterns in the supplied string
+     */
+    private int countSubstitutionPatterns(final String aString) {
+        final Pattern pattern = Pattern.compile(SUBSTITUTION_PATTERN, Pattern.LITERAL);
+        final Matcher matcher = pattern.matcher(aString);
+
+        int startIndex = 0;
+        int count = 0;
+
+        while (matcher.find(startIndex)) {
+            startIndex = matcher.start() + 1;
+            count += 1;
+        }
+
+        return count;
     }
 }
