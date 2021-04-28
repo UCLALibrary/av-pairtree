@@ -147,7 +147,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
             promise.fail(details);
         }
 
-        // final Delete the test final artifact after we've checked it to determine success
+        // Delete the test artifact after we've checked it to determine success
         myContext.vertx().fileSystem().delete(aFileName).onComplete(deletion -> {
             if (deletion.succeeded()) {
                 promise.complete();
