@@ -82,6 +82,9 @@ fi
 ingest_fester_base_url=`get_ingest_fester_base_url $1`
 >&2 echo "Using Fester instance at ${ingest_fester_base_url} for ingest."
 
+# Get a more informative return status from our pipeline in the main loop
+set -o pipefail
+
 inotifywait -mr \
     --timefmt '%d/%m/%y %H:%M' --format '%T %w %f' \
     -e close_write \
