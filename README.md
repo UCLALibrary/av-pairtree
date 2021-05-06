@@ -12,7 +12,7 @@ There are two sets of build instructions: one for systems with [Maven](https://m
 
 To build the project the first time, type:
 
-    ./mvnw validate verify
+    ./mvnw validate && ./mvnw verify
 
 To run the service locally, type:
 
@@ -26,7 +26,7 @@ To process one of the test CSVs, you can copy a CSV file from `src/test/resource
 
 To build the project the first time, type:
 
-    mvn validate verify
+    mvn validate && mvn verify
 
 To run the service locally, type:
 
@@ -38,7 +38,7 @@ To process one of the test CSVs, you can copy a CSV file from `src/test/resource
 
 ## Additional instructions
 
-The `validate` argument only needs to be supplied to the mvn(w) command on the first run. After that, `mvn(w) verify` (or `mvn(w) package`) will work fine. Also, the build automatically happens when you run `mvn(w) -Plive test` so you don't need to repeat both steps just to run a test after the initial run.
+`mvn(w) validate` only needs to be run once, in order to build the project for the first time. After that, `mvn(w) verify` (or `mvn(w) package`) will work fine. Also, the build automatically happens when you run `mvn(w) -Plive test` so you don't need to repeat both steps just to run a test after the initial run.
 
 ## Running in production
 
