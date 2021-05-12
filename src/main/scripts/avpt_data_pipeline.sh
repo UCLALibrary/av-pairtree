@@ -3,7 +3,7 @@
 function get_av_metadata {
     # Runs the CSV at the path provided via $1 through services-metagetter and outputs the path of the result CSV
     2>/dev/null 1>&2 \
-    java -jar UCLALibrary/services-metagetter/target/build-artifact/services-metagetter-0.0.1-SNAPSHOT.jar \
+    java -jar ${AVPTDP_METAGETTER_JAR_PATH} \
         $1 ${AVPTDP_METAGETTER_MEDIA_DIRECTORY} `which ffprobe` ${AVPTDP_METAGETTER_OUTPUT_DIRECTORY} &&
     echo `strip_trailing_slash ${AVPTDP_METAGETTER_OUTPUT_DIRECTORY}`/`basename $1`
 }
@@ -64,6 +64,10 @@ then
 elif [ -z "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" ]
 then
     echo "The env var AVPTDP_FESTERIZE_OUTPUT_DIRECTORY must be set."
+    exit 1
+elif [ -z "${AVPTDP_METAGETTER_JAR_PATH}" ]
+then
+    echo "The env var AVPTDP_METAGETTER_JAR_PATH must be set."
     exit 1
 elif [ -z "${AVPTDP_METAGETTER_MEDIA_DIRECTORY}" ]
 then
