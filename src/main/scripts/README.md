@@ -25,6 +25,7 @@ Environment variable|Description
 ---|---
 AVPTDP_INPUT_DIRECTORY|directory where A/V Pairtree puts .out files; this is the input directory for the pipeline (and thus, for Metagetter)
 AVPTDP_FESTERIZE_OUTPUT_DIRECTORY|directory where Festerize puts .csv files
+AVPTDP_METAGETTER_JAR_PATH|path to the Metagetter JAR
 AVPTDP_METAGETTER_MEDIA_DIRECTORY|directory where Metagetter will search for A/V media files
 AVPTDP_METAGETTER_OUTPUT_DIRECTORY|directory where Metagetter puts .out files (which are then renamed as .csv); this is the input directory for Festerize
 AVPTDP_SLACK_WEBHOOK_URL|URL of the webhook for posting to Slack
@@ -45,6 +46,7 @@ For example:
 
 export AVPTDP_INPUT_DIRECTORY="avpt_output/"
 export AVPTDP_FESTERIZE_OUTPUT_DIRECTORY="festerize_output/"
+export AVPTDP_METAGETTER_JAR_PATH="target/build-artifact/services-metagetter-0.0.1-SNAPSHOT.jar"
 export AVPTDP_METAGETTER_MEDIA_DIRECTORY="metagetter_media/"
 export AVPTDP_METAGETTER_OUTPUT_DIRECTORY="metagetter_output/"
 export AVPTDP_SLACK_WEBHOOK_URL="https://hooks.slack.com/services/0123456789"
