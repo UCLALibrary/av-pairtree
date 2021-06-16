@@ -57,6 +57,11 @@ public abstract class AbstractAvPtTest {
     protected String myTestAvServer;
 
     /**
+     * The name of the S3 bucket we use when testing.
+     */
+    protected String myTestS3Bucket;
+
+    /**
      * Sets up the test.
      *
      * @param aContext A test context
@@ -69,6 +74,7 @@ public abstract class AbstractAvPtTest {
 
         ConfigRetriever.create(vertx).getConfig().onSuccess(config -> {
             myTestAvServer = config.getString(Config.ACCESS_URL_PATTERN);
+            myTestS3Bucket = config.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
             myPtDir = config.getString(Config.OUTPUT_DIR);
             myPort = PortUtils.getPort();
             options.setConfig(config.put(Config.HTTP_PORT, myPort));

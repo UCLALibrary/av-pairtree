@@ -21,6 +21,11 @@ public final class AvPtConstants {
      */
     public static final String SYSTEM_TMP_DIR = System.getProperty("java.io.tmpdir");
 
+    /**
+     * The template string for AWS S3 resource URLs. The slots are (in order): bucket name, region, and object key.
+     */
+    public static final String AUDIOWAVEFORM_URL_TEMPLATE = "https://{}.s3-{}.amazonaws.com/{}";
+
     /*
      * Constant classes have private constructors.
      */

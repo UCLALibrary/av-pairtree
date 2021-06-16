@@ -32,6 +32,9 @@
   <logger name="ws.schild.jave.process.ffmpeg.DefaultFFMPEGLocator" level="INFO" additivity="false">
     <appender-ref ref="STDOUT" />
   </logger>
+  <logger name="software.amazon.awssdk" level="ERROR" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
 
   <root level="DEBUG">
     <appender-ref ref="STDOUT" />

@@ -56,6 +56,11 @@ public final class TestConstants {
     public static final String PROCESSED = "Processed";
 
     /**
+     * The item's waveform property from the JSON message format.
+     */
+    public static final String WAVEFORM = "Waveform";
+
+    /**
      * The ARKs from the test fixtures.
      */
     public static final Set<String> EXPECTED_ARKS = new HashSet<>(Arrays.asList("ark:/21198/zz002dvwr6",

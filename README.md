@@ -1,12 +1,35 @@
 # A/V Pairtree
 
-This project processes A/V files into a collection of Pairtree structures.
+This project processes A/V files into a collection of Pairtree structures and generates waveform data (for visualization) from audio files.
 
 ## Pre-requisites
 
-The only hard requirement is that you need a [JDK (>= 11)](https://adoptopenjdk.net/) installed and configured.
+In addition to a [JDK (>= 11)](https://adoptopenjdk.net/) installed and configured, you will also need the following in order to generate waveform data for audio files:
+
+  * the BBC's [audiowaveform](https://github.com/bbc/audiowaveform) command line tool, with the executable on your PATH; and
+  * an AWS S3 bucket for storing the audio waveform data, and write credentials for the bucket (which you'll likely want to be world-readable).
 
 There are two sets of build instructions: one for systems with [Maven](https://maven.apache.org/) pre-installed and one for systems without Maven.
+
+## Setting AWS credentials for integration tests
+
+In order to run the integration tests that use AWS S3, you should have an entry like the following in the `profiles` section of your `/home/.m2/settings.xml` (or another settings file elsewhere):
+
+```xml
+<profile>
+  <id>av-pairtree</id>
+  <activation>
+    <property>
+      <name>!skipDefaultProfile</name>
+    </property>
+  </activation>
+  <properties>
+    <avpt.s3.access_key>myAwsAccessKey</avpt.s3.access_key>
+    <avpt.s3.region>us-west-2</avpt.s3.region>
+    <avpt.s3.secret_key>myAwsSecretKey</avpt.s3.secret_key>
+  </properties>
+</profile>
+```
 
 ## Building and testing locally without Maven pre-installed
 
@@ -42,9 +65,20 @@ To process one of the test CSVs, you can copy a CSV file from `src/test/resource
 
 ## Running in production
 
-To run av-pairtree from the Jar file, one needs to type the following:
+To run av-pairtree from the Jar file, one must set AWS S3 credentials and then run the JAR:
 
-    java -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -Dvertx-config-path=config.properties -jar target/av-pairtree-0.0.1-SNAPSHOT.jar run edu.ucla.library.avpairtree.verticles.MainVerticle
+```bash
+#!/bin/bash
+
+export AWS_ACCESS_KEY_ID=myAwsAccessKey
+export AWS_DEFAULT_REGION=us-west-2
+export AWS_SECRET_ACCESS_KEY=myAwsSecretKey
+
+java \
+    -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory \
+    -Dvertx-config-path=config.properties \
+    -jar target/av-pairtree-0.0.1-SNAPSHOT.jar run edu.ucla.library.avpairtree.verticles.MainVerticle
+```
 
 The application is configured by the value of `vertx-config-path`, which in the example above is a config file residing in the same directory as the Jar file.
 

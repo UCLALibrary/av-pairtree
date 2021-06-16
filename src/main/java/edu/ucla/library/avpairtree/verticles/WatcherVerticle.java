@@ -6,11 +6,11 @@ import java.io.FileWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.csveed.api.CsvClient;
 import org.csveed.api.CsvClientImpl;
@@ -39,6 +39,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
 
 /**
  * A verticle that responds to events from the CSV directory watcher.
@@ -69,26 +70,37 @@ public class WatcherVerticle extends AbstractVerticle {
                 reader.readBeans().forEach(item -> {
                     item.setPathRoot(item.getFilePath());
 
-                    if (item.isAudio()) { // Audio gets converted from wav to a more Web-friendly format
-                        futures.add(eventBus.request(ConverterVerticle.class.getName(), item, options));
+                    if (item.isAudio()) {
+                        // Audio gets converted from wav to a more Web-friendly format, and a waveform file is generated
+                        futures.add(eventBus.<CsvItem>request(ConverterVerticle.class.getName(), item, options));
+                        futures.add(eventBus.<JsonObject>request(WaveformVerticle.class.getName(), item, options));
                     } else if (item.isVideo()) { // Videos are already in mp4 format so don't need conversion
-                        futures.add(eventBus.request(PairtreeVerticle.class.getName(), item, options));
+                        futures.add(eventBus.<CsvItem>request(PairtreeVerticle.class.getName(), item, options));
                     } // else, ignore
                 });
 
                 CompositeFuture.all(futures).onSuccess(conversions -> {
-                    final Map<String, CsvItem> arkMap = new HashMap<>();
+                    final List<Message<?>> results = conversions.result().list();
 
-                    conversions.result().list().stream().forEach(object -> {
-                        @SuppressWarnings("unchecked") // Composite futures don't support typing
-                        final CsvItem item = ((Message<CsvItem>) object).body();
-                        final String ark = item.getItemARK();
+                    // Filter the audiowaveform URLs out of the results and combine them all into a single JsonObject,
+                    // which we'll use as a lookup table when updating the CSV with audiowaveform URLs
+                    final JsonObject waveformUriMap = results.stream()
+                            .filter(result -> result.body().getClass().equals(JsonObject.class))
+                            .map(msg -> (JsonObject) msg.body())
+                            .reduce(new JsonObject(), (jsonObject1, jsonObject2) -> jsonObject1.mergeIn(jsonObject2));
 
-                        LOGGER.info(MessageCodes.AVPT_009, ark);
-                        arkMap.put(ark, item);
-                    });
+                    // Map ARKs to their corresponding CsvItem
+                    final Map<String, CsvItem> csvItemMap = results.stream()
+                            .filter(result -> result.body().getClass().equals(CsvItem.class))
+                            .map(msg -> {
+                                final CsvItem item = (CsvItem) msg.body();
 
-                    updateCSV(message.body(), arkMap).onSuccess(csvFilePath -> {
+                                LOGGER.info(MessageCodes.AVPT_009, item.getItemARK());
+                                return item;
+                            })
+                            .collect(Collectors.toMap(item -> item.getItemARK(), item -> item));
+
+                    updateCSV(message.body(), csvItemMap, waveformUriMap).onSuccess(csvFilePath -> {
                         LOGGER.info(MessageCodes.AVPT_006, csvFilePath);
                         message.reply(Op.SUCCESS);
                     }).onFailure(error -> {
@@ -103,13 +115,15 @@ public class WatcherVerticle extends AbstractVerticle {
     }
 
     /**
-     * Update the CSV file with our newly created IIIF access URLs.
+     * Update the CSV file with our newly created IIIF access URLs and waveform URLs.
      *
      * @param aCsvFilePath The path to the existing CSV file
-     * @param aArkMap A map of ARKs for the items that have been processed
+     * @param aCsvItemMap A map of ARKs to the items that have been processed
+     * @param aWaveformMap A map of ARKs to audiowaveform URLs for the items that have been processed
      * @return The path of the new CSV file
      */
-    private Future<String> updateCSV(final String aCsvFilePath, final Map<String, CsvItem> aArkMap) {
+    private Future<String> updateCSV(final String aCsvFilePath, final Map<String, CsvItem> aCsvItemMap,
+            final JsonObject aWaveformMap) {
         final String newCsvPath = FileUtils.stripExt(aCsvFilePath) + ".out"; // Would be re-watched if ext was .csv
         final Promise<String> promise = Promise.promise();
 
@@ -118,59 +132,80 @@ public class WatcherVerticle extends AbstractVerticle {
             final StringReader csvReader = new StringReader(csvBuffer.toString(StandardCharsets.UTF_8));
             final CsvClient<CsvItem> reader = new CsvClientImpl<>(csvReader, CsvItem.class);
 
-            // Open the CSV file we'll be writing to with the updated information
+            // Open the CSV file we'll be writing the updated information to
             try (FileWriter csvWriter = new FileWriter(new File(newCsvPath))) {
                 final CsvClient<?> writer = new CsvClientImpl<>(csvWriter);
-                final Header header = reader.readHeader();
-                final int accessUrlIndex = getUrlAccessIndex(header);
+                final Header originalHeader = reader.readHeader();
+
+                final int originalRowSize = originalHeader.size();
+                final int originalAccessUrlIndex = getUrlAccessIndex(originalHeader);
+                final int originalWaveformIndex = getWaveformIndex(originalHeader);
+
+                final int rowSize;
+                final int accessUrlIndex;
+                final int waveformIndex;
 
                 // Override the unusual out of the box defaults for the writer
                 writer.setEscape('"').setQuote('"').setSeparator(',');
 
-                if (accessUrlIndex != -1) {
-                    writer.writeHeader(header);
-                } else {
-                    final String[] headerRow = new String[header.size() + 1];
+                // Deal with the header row first; unless both columns exist already, we have to modify the underlying
+                // array (it's arguably a limitation of CSVeed that we have to do that)
+                if (originalWaveformIndex != -1 && originalAccessUrlIndex != -1) {
+                    // Both columns exist already, so just use the header as-is; record some useful metadata first
+                    rowSize = originalRowSize;
+                    accessUrlIndex = originalAccessUrlIndex;
+                    waveformIndex = originalWaveformIndex;
 
-                    for (int index = 0; index < headerRow.length; index++) {
-                        headerRow[index] = header.getName(index);
+                    writer.writeHeader(originalHeader);
+                } else {
+                    final String[] headerRow;
+
+                    if (originalAccessUrlIndex != -1) {
+                        // IIIF Access URL exists, but not Waveform; expand CSV by one column
+                        rowSize = originalRowSize + 1;
+                        accessUrlIndex = originalAccessUrlIndex;
+                        waveformIndex = rowSize - 1;
+                    } else {
+                        // Neither IIIF Access URL or Waveform exist in the CSV yet (Waveform cannot possibly exist
+                        // without IIIF Access URL); expand CSV by two columns
+                        rowSize = originalRowSize + 2;
+                        accessUrlIndex = rowSize - 2;
+                        waveformIndex = rowSize - 1;
+                    }
+                    headerRow = new String[rowSize];
+
+                    for (int index = 0; index < rowSize; index++) {
+                        // Put the new header fields where they belong
+                        if (accessUrlIndex == index) {
+                            headerRow[index] = CsvItem.IIIF_ACCESS_URL_HEADER;
+                        } else if (waveformIndex == index) {
+                            headerRow[index] = CsvItem.WAVEFORM_HEADER;
+                        } else {
+                            // Copy values from the original header row to the new one
+                            headerRow[index] = originalHeader.getName(index + 1); // Row and Header indices are 1-based
+                        }
                     }
 
-                    headerRow[header.size()] = CsvItem.IIIF_ACCESS_URL_HEADER;
                     writer.writeHeader(headerRow);
                 }
 
-                // Stream through all the rows in our CSV file
-                reader.readRows().stream().forEach(row -> {
-                    final String ark = row.get(CsvItem.ITEM_ARK_HEADER);
+                // Now, stream through all the non-header rows
+                reader.readRows().stream().forEach(originalRow -> {
+                    final String ark = originalRow.get(CsvItem.ITEM_ARK_HEADER);
+                    final CsvItem csvItem = aCsvItemMap.get(ark);
+                    final String[] row = new String[rowSize];
 
-                    final int columnCount = row.size();
-                    final String[] columns;
-
-                    // Check to see if this CSV file has an existing "IIIF Access URL" column
-                    if (accessUrlIndex == -1) {
-                        columns = new String[columnCount + 1];
-
-                        for (int index = 0; index < columnCount; index++) {
-                            columns[index] = row.get(index + 1); // Strangely, row is 1-based
-                        }
-
-                        if (aArkMap.containsKey(ark)) {
-                            columns[columnCount] = constructAccessURL(aArkMap.get(ark));
-                        }
-                    } else {
-                        columns = new String[columnCount];
-
-                        for (int index = 0; index < columnCount; index++) {
-                            if (accessUrlIndex != index) {
-                                columns[index] = row.get(index + 1); // Strangely, row is 1-based
-                            } else if (aArkMap.containsKey(ark)) {
-                                columns[index] = constructAccessURL(aArkMap.get(ark));
-                            }
+                    for (int index = 0; index < rowSize; index++) {
+                        if (accessUrlIndex == index) {
+                            row[index] = aCsvItemMap.containsKey(ark) ? constructAccessURL(csvItem) : "";
+                        } else if (waveformIndex == index) {
+                            row[index] = aWaveformMap.getString(ark, "");
+                        } else {
+                            row[index] = originalRow.get(index + 1);
                         }
                     }
 
-                    writer.writeRow(columns);
+                    writer.writeRow(row);
                 });
 
                 csvWriter.close();
@@ -191,9 +226,23 @@ public class WatcherVerticle extends AbstractVerticle {
      */
     private int getUrlAccessIndex(final Header aHeader) {
         try {
-            return aHeader.getIndex(CsvItem.IIIF_ACCESS_URL_HEADER) - 1; // Strangely, header index is 1-based
+            return aHeader.getIndex(CsvItem.IIIF_ACCESS_URL_HEADER) - 1; // Row and Header indices are 1-based
         } catch (final CsvException details) {
             return -1; // Seems odd to throw an exception for this
+        }
+    }
+
+    /**
+     * Gets the waveform index.
+     *
+     * @param aHeader A header
+     * @return The waveform index
+     */
+    private int getWaveformIndex(final Header aHeader) {
+        try {
+            return aHeader.getIndex(CsvItem.WAVEFORM_HEADER) - 1;
+        } catch (final CsvException details) {
+            return -1;
         }
     }
 
