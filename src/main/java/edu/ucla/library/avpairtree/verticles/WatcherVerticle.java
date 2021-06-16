@@ -197,7 +197,12 @@ public class WatcherVerticle extends AbstractVerticle {
 
                     for (int index = 0; index < rowSize; index++) {
                         if (accessUrlIndex == index) {
-                            row[index] = aCsvItemMap.containsKey(ark) ? constructAccessURL(csvItem) : "";
+                            if (aCsvItemMap.containsKey(ark)) {
+                                row[index] = constructAccessURL(csvItem);
+                            } else {
+                                // Don't overwrite what may already be there (e.g. in the case of images)
+                                row[index] = originalRow.get(index + 1);
+                            }
                         } else if (waveformIndex == index) {
                             row[index] = aWaveformMap.getString(ark, "");
                         } else {
