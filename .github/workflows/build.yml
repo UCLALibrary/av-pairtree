@@ -11,6 +11,7 @@ jobs:
     name: Maven PR Builder (JDK ${{ matrix.java }})
     runs-on: ubuntu-latest
     env:
+      AUDIOWAVEFORM_S3_BUCKET: ${{ secrets.AUDIOWAVEFORM_S3_BUCKET }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_DEFAULT_REGION: us-west-2
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

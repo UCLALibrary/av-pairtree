@@ -25,6 +25,7 @@ In order to run the integration tests that use AWS S3, you should have an entry 
   </activation>
   <properties>
     <avpt.s3.access_key>myAwsAccessKey</avpt.s3.access_key>
+    <avpt.s3.bucket>myAwsS3Bucket</avpt.s3.bucket>
     <avpt.s3.region>us-west-2</avpt.s3.region>
     <avpt.s3.secret_key>myAwsSecretKey</avpt.s3.secret_key>
   </properties>
@@ -70,6 +71,7 @@ To run av-pairtree from the Jar file, one must set AWS S3 credentials and then r
 ```bash
 #!/bin/bash
 
+export AUDIOWAVEFORM_S3_BUCKET=myAwsS3Bucket
 export AWS_ACCESS_KEY_ID=myAwsAccessKey
 export AWS_DEFAULT_REGION=us-west-2
 export AWS_SECRET_ACCESS_KEY=myAwsSecretKey

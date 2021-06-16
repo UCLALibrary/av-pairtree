@@ -78,9 +78,9 @@ public final class Config {
     public static final String CONVERSION_WORKERS = "conversion.workers";
 
     /**
-     * The configuration property for the S3 bucket for audio waveforms.
+     * The environment variable for the S3 bucket for audio waveforms.
      */
-    public static final String AUDIOWAVEFORM_S3_BUCKET = "audiowaveform.s3.bucket";
+    public static final String AUDIOWAVEFORM_S3_BUCKET = "AUDIOWAVEFORM_S3_BUCKET";
 
     // Constant classes should have private constructors.
     private Config() {

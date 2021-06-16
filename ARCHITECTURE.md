@@ -69,7 +69,6 @@ The properties and default values for an av-pairtree configuration file are as f
 | audio.channels | The number of channels in the audio stream | 2 |
 | iiif.access.url | The URL pattern into which to insert the Pairtree path | N/A |
 | conversion.workers | The number of cores to use for audio file conversion | 2 |
-| audiowaveform.s3.bucket | The S3 bucket to use for depositing binary audiowaveform data files | test-audiowaveform-resources |
 
 ## Documentation
 

@@ -115,7 +115,7 @@ public final class WaveformVerticle extends AbstractVerticle {
             return;
         }
 
-        myS3Bucket = config.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
+        myS3Bucket = System.getenv(Config.AUDIOWAVEFORM_S3_BUCKET);
 
         if (myS3Bucket == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_020);

@@ -74,7 +74,7 @@ public abstract class AbstractAvPtTest {
 
         ConfigRetriever.create(vertx).getConfig().onSuccess(config -> {
             myTestAvServer = config.getString(Config.ACCESS_URL_PATTERN);
-            myTestS3Bucket = config.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
+            myTestS3Bucket = System.getenv(Config.AUDIOWAVEFORM_S3_BUCKET);
             myPtDir = config.getString(Config.OUTPUT_DIR);
             myPort = PortUtils.getPort();
             options.setConfig(config.put(Config.HTTP_PORT, myPort));
