@@ -45,7 +45,7 @@ public final class WaveformVerticle extends AbstractVerticle {
 
     private static final String SPACE = " ";
 
-    private final String myAwsDefaultRegion = System.getenv("AWS_DEFAULT_REGION");
+    private String myAwsDefaultRegion;
 
     private S3AsyncClient myS3Client;
 
@@ -96,6 +96,8 @@ public final class WaveformVerticle extends AbstractVerticle {
 
         // Make sure that configuration and credentials for AWS S3 have been provided
 
+        myAwsDefaultRegion = config.getString("AWS_DEFAULT_REGION");
+
         if (myAwsDefaultRegion == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_018);
 
@@ -105,8 +107,8 @@ public final class WaveformVerticle extends AbstractVerticle {
             return;
         }
 
-        if (System.getenv(ProfileProperty.AWS_ACCESS_KEY_ID.toUpperCase()) == null ||
-                System.getenv(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase()) == null) {
+        if (config.getString(ProfileProperty.AWS_ACCESS_KEY_ID.toUpperCase()) == null ||
+                config.getString(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase()) == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_017);
 
             LOGGER.error(configErrorMsg);
@@ -115,7 +117,7 @@ public final class WaveformVerticle extends AbstractVerticle {
             return;
         }
 
-        myS3Bucket = System.getenv(Config.AUDIOWAVEFORM_S3_BUCKET);
+        myS3Bucket = config.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
 
         if (myS3Bucket == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_020);
