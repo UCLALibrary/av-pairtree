@@ -24,6 +24,8 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
+      - name: Install Audio Waveform Image Generator
+        run: sudo add-apt-repository ppa:chris-needham/ppa && sudo apt-get install audiowaveform
       # If running locally in act, install Maven
       - name: Set up Maven if needed
         if: ${{ env.ACT }}
