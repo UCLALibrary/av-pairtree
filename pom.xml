@@ -262,11 +262,6 @@
             <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
             <vertx-config-path>${project.basedir}/target/test-classes/test-config.properties</vertx-config-path>
           </systemPropertyVariables>
-          <environmentVariables>
-            <AWS_ACCESS_KEY_ID>${avpt.s3.access_key}</AWS_ACCESS_KEY_ID>
-            <AWS_DEFAULT_REGION>${avpt.s3.region}</AWS_DEFAULT_REGION>
-            <AWS_SECRET_ACCESS_KEY>${avpt.s3.secret_key}</AWS_SECRET_ACCESS_KEY>
-          </environmentVariables>
           <forkCount>1</forkCount>
           <argLine>${jacoco.agent.arg}</argLine>
         </configuration>
