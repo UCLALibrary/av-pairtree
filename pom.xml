@@ -407,6 +407,7 @@
             <configuration>
               <environmentVariables>
                 <AUDIOWAVEFORM_S3_BUCKET>${avpt.s3.bucket}</AUDIOWAVEFORM_S3_BUCKET>
+                <AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE>${avpt.s3.object.url.template}</AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE>
                 <AWS_ACCESS_KEY_ID>${avpt.s3.access_key}</AWS_ACCESS_KEY_ID>
                 <AWS_DEFAULT_REGION>${avpt.s3.region}</AWS_DEFAULT_REGION>
                 <AWS_SECRET_ACCESS_KEY>${avpt.s3.secret_key}</AWS_SECRET_ACCESS_KEY>

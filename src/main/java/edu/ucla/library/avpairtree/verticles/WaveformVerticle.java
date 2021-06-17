@@ -11,7 +11,6 @@ import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 import info.freelibrary.util.StringUtils;
 
-import edu.ucla.library.avpairtree.AvPtConstants;
 import edu.ucla.library.avpairtree.AvPtUtils;
 import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.CsvItem;
@@ -50,6 +49,8 @@ public final class WaveformVerticle extends AbstractVerticle {
     private S3AsyncClient myS3Client;
 
     private String myS3Bucket;
+
+    private String myS3ObjectUrlTemplate;
 
     private String mySourceDir;
 
@@ -128,6 +129,17 @@ public final class WaveformVerticle extends AbstractVerticle {
             return;
         }
 
+        myS3ObjectUrlTemplate = config.getString(Config.AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE);
+
+        if (myS3ObjectUrlTemplate == null) {
+            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_021);
+
+            LOGGER.error(configErrorMsg);
+            aPromise.fail(configErrorMsg);
+
+            return;
+        }
+
         myS3Client = S3AsyncClient.builder().region(Region.of(myAwsDefaultRegion)).build();
 
         vertx.eventBus().<CsvItem>consumer(getClass().getName()).handler(this::handle);
@@ -156,14 +168,14 @@ public final class WaveformVerticle extends AbstractVerticle {
                 myS3Client.putObject(req, body).whenComplete((resp, err) -> {
                     if (resp != null) {
                         // Success!
-                        final String audiowaveformURL = StringUtils.format(AvPtConstants.AUDIOWAVEFORM_URL_TEMPLATE,
-                                myS3Bucket, myAwsDefaultRegion, URLEncoder.encode(s3ObjectKey, StandardCharsets.UTF_8));
+                        final String audiowaveformURL = StringUtils.format(myS3ObjectUrlTemplate,
+                                URLEncoder.encode(s3ObjectKey, StandardCharsets.UTF_8));
 
                         // Reply with a JsonObject associating the item ARK with the URL for the audiowaveform data
                         aMessage.reply(new JsonObject().put(csvItem.getItemARK(), audiowaveformURL));
                     } else {
                         final String s3ErrorMsg =
-                                LOGGER.getMessage(MessageCodes.AVPT_021, s3ObjectKey, err.getMessage());
+                                LOGGER.getMessage(MessageCodes.AVPT_022, s3ObjectKey, err.getMessage());
 
                         // Since the sender (WatcherVerticle) just logs all errors, should be okay to use a single
                         // failureCode for all errors

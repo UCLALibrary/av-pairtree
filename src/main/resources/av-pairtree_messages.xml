@@ -25,7 +25,8 @@
   <entry key="AVPT_017">The environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set</entry>
   <entry key="AVPT_018">The environment variable AWS_DEFAULT_REGION must be set</entry>
   <entry key="AVPT_019">Using S3 bucket '{}' for audiowaveform storage</entry>
-  <entry key="AVPT_020">The system property 'audiowaveform.s3.bucket' must be set</entry>
-  <entry key="AVPT_021">Unable to upload audiowaveform for item '{}' to S3: {}</entry>
+  <entry key="AVPT_020">The environment variable AUDIOWAVEFORM_S3_BUCKET must be set</entry>
+  <entry key="AVPT_021">The environment variable AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE must be set</entry>
+  <entry key="AVPT_022">Unable to upload audiowaveform for item '{}' to S3: {}</entry>
 
 </properties>
