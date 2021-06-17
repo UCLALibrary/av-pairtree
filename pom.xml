@@ -36,6 +36,7 @@
     <slf4j.ext.version>1.7.30</slf4j.ext.version>
     <dir.watcher.version>0.15.0</dir.watcher.version>
     <freelib.utils.version>2.3.0</freelib.utils.version>
+    <awssdk.version>2.15.15</awssdk.version>
 
     <!-- Build plugin versions -->
     <vertx.plugin.version>1.0.23</vertx.plugin.version>
@@ -64,6 +65,13 @@
         <groupId>io.vertx</groupId>
         <artifactId>vertx-stack-depchain</artifactId>
         <version>${vertx.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${awssdk.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -121,6 +129,10 @@
       <artifactId>jave-core</artifactId>
       <version>${jave.version}</version>
     </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+    </dependency>
 
     <!-- Below is a dependency that needs updating due to security issue (may be able to remove in future) -->
     <dependency>
@@ -150,6 +162,7 @@
         <excludes>
           <exclude>synanon/video/synanon.mp4</exclude>
           <exclude>soul/audio/uclapasc.wav</exclude>
+          <exclude>soul/audio/uclapasc.dat</exclude>
         </excludes>
       </testResource>
     </testResources>
@@ -378,8 +391,33 @@
         </plugins>
       </build>
     </profile>
-  </profiles>
 
+    <!-- A profile for setting AWS environment variables for Maven Surefire when we're not running the build on GitHub Actions -->
+    <profile>
+      <id>surefire-config-aws-environment-variables</id>
+      <activation>
+        <property>
+          <name>!ghActions</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <environmentVariables>
+                <AUDIOWAVEFORM_S3_BUCKET>${avpt.s3.bucket}</AUDIOWAVEFORM_S3_BUCKET>
+                <AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE>${avpt.s3.object.url.template}</AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE>
+                <AWS_ACCESS_KEY_ID>${avpt.s3.access_key}</AWS_ACCESS_KEY_ID>
+                <AWS_DEFAULT_REGION>${avpt.s3.region}</AWS_DEFAULT_REGION>
+                <AWS_SECRET_ACCESS_KEY>${avpt.s3.secret_key}</AWS_SECRET_ACCESS_KEY>
+              </environmentVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>

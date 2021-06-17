@@ -18,6 +18,7 @@ import edu.ucla.library.avpairtree.Op;
 import edu.ucla.library.avpairtree.handlers.StatusHandler;
 
 import io.methvin.watcher.DirectoryWatcher;
+
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -131,6 +132,7 @@ public class MainVerticle extends AbstractVerticle {
                     futures.add(deployVerticle(new WatcherVerticle(), aConfig));
                     futures.add(deployVerticle(new PairtreeVerticle(), aConfig));
                     futures.add(deployVerticle(new ConverterVerticle(), aConfig.copy().put(WORKER, true)));
+                    futures.add(deployVerticle(new WaveformVerticle(), aConfig));
 
                     CompositeFuture.all(futures).onSuccess(result -> {
                         startCsvDirWatcher(aConfig).onComplete(startup -> {

@@ -22,10 +22,18 @@ import io.vertx.core.json.JsonObject;
 public class CsvItem {
 
     /**
-     * The CSV header column for the IIIF access URL.
+     * The CSV header column for the IIIF access URL. Note that this not used for deserialization; see
+     * WatcherVerticle.updateCSV for its use in serialization.
      */
     @CsvIgnore
     public static final String IIIF_ACCESS_URL_HEADER = "IIIF Access URL";
+
+    /**
+     * The CSV header column for the Waveform. Note that this not used for deserialization; see
+     * WatcherVerticle.updateCSV for its use in serialization.
+     */
+    @CsvIgnore
+    public static final String WAVEFORM_HEADER = "Waveform";
 
     /**
      * The CSV header column for the item's identifier.

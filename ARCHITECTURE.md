@@ -6,15 +6,18 @@ This document describes the high level architecture of the av-pairtree program. 
 
 The av-pairtree program is an application that watches a "drop box" for new or updated CSV files with a certain structure. When a CSV file with A/V files has been put into the drop box, the av-pairtree program picks them up and processes their audio and video files.
 
-The processing of video files (which are MP4s by default) involves putting them into a [Pairtree](https://tools.ietf.org/html/draft-kunze-pairtree-01) structure that's accessible to a media server. The processing of audio files (which are WAVs by default) involves converting the WAV files into MP4 files and, then, putting them into the Pairtree structure.
+The processing of video files (which are MP4s by default) involves putting them into a [Pairtree](https://tools.ietf.org/html/draft-kunze-pairtree-01) structure that's accessible to a media server. The processing of audio files (which are WAVs by default) involves two conversions:
 
-After all the A/V files in a CSV file have been processed, the input CSV is updated to include the resources' new access URLs (i.e. the URLs of the media files as served by the media server) and written back out to the file system.
+  * to MP4 format, the results of which are put into the Pairtree structure; and
+  * to binary [audiowaveform](https://github.com/bbc/audiowaveform) format, the results of which are deposited to AWS S3.
+
+After all the A/V files in a CSV file have been processed, the input CSV is updated to include the resources' new access URLs (i.e. the URLs of the media files as served by the media server) and audiowaveform URLs, then written back out to the file system.
 
 ![Overview diagram for av-pairtree's components](docs/images/av_pairtree_overview.svg)
 
 ## Expected CSV Structure
 
-A CSV file that is going to be processed by av-pairtree should have two required columns: `File Name` and `ItemARK`. The first is used to retrieve the media file to be processed and the second is used to create the Pairtree structure. If the file has been previously processed (or has been processed by the Bucketeer application), it will also have a `IIIF Access URL` column. That's fine. However, older CSV files may have `iiif_access_url` as a column header. Any CSVs with that column header should be manually updated before processing with av-pairtree.
+A CSV file that is going to be processed by av-pairtree should have two required columns: `File Name` and `ItemARK`. The first is used to retrieve the media file to be processed and the second is used to create the Pairtree structure. If the file has been previously processed (or has been processed by the Bucketeer application), it will also have a `IIIF Access URL` column; if previously processed, it may also have a `Waveform` column. That's fine. However, older CSV files may have `iiif_access_url` as a column header. Any CSVs with that column header should be manually updated before processing with av-pairtree.
 
 ## Code Map
 
@@ -33,7 +36,7 @@ The basic structure of this particular Vert.x program includes: verticles, handl
 | CsvItem | This is an object which represents a single item (or row) from the CSV file | [src/main/java/edu/ucla/library/avpairtree/CsvItem.java](https://github.com/UCLALibrary/av-pairtree/blob/main/src/main/java/edu/ucla/library/avpairtree/CsvItem.java) |
 | CsvItemCodec | This codec implements a JSON (de)serialization of CsvItem so that it can be sent over the event bus | [src/main/java/edu/ucla/library/avpairtree/CsvItemCodec.java](https://github.com/UCLALibrary/av-pairtree/blob/main/src/main/java/edu/ucla/library/avpairtree/CsvItemCodec.java) |
 
-Actions (e.g., the parsing of CSV files, conversion of media files, or storage of media files in a Pairtree structure, etc.) are performed by the application's various verticles (e.g., WatcherVerticle, ConverterVerticle, PairtreeVerticle, etc.) Cf. the `verticles` directory for examples.
+Actions (e.g., the parsing of CSV files, conversion of media files, or storage of media files in a Pairtree structure, etc.) are performed by the application's various verticles (e.g., WatcherVerticle, ConverterVerticle, PairtreeVerticle, WaveformVerticle, etc.) Cf. the `verticles` directory for examples.
 
 ## Sequence Diagram
 

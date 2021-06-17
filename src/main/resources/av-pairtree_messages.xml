@@ -5,6 +5,7 @@
 <properties>
   <entry key="message-class-name">edu.ucla.library.avpairtree.MessageCodes</entry>
 
+  <entry key="AVPT_000">{}: {}</entry>
   <entry key="AVPT_001">Server started and listening at port {}</entry>
   <entry key="AVPT_002">Verticle undeployed for testing purposes: {} [{}]</entry>
   <entry key="AVPT_003">Running test: {}</entry>
@@ -19,5 +20,13 @@
   <entry key="AVPT_012">{} worker pool size set to '{}' workers</entry>
   <entry key="AVPT_013">Index for IIIF access URL doesn't correspond to number of substitution patterns: {}</entry>
   <entry key="AVPT_014">IIIF access URL pattern doesn't contain a supported number of substitution patterns</entry>
+  <entry key="AVPT_015">Command '{}' exited with code {}. Output: {}</entry>
+  <entry key="AVPT_016">Something went wrong while running command '{}': {}</entry>
+  <entry key="AVPT_017">The environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set</entry>
+  <entry key="AVPT_018">The environment variable AWS_DEFAULT_REGION must be set</entry>
+  <entry key="AVPT_019">Using S3 bucket '{}' for audiowaveform storage</entry>
+  <entry key="AVPT_020">The environment variable AUDIOWAVEFORM_S3_BUCKET must be set</entry>
+  <entry key="AVPT_021">The environment variable AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE must be set</entry>
+  <entry key="AVPT_022">Unable to upload audiowaveform for item '{}' to S3: {}</entry>
 
 </properties>

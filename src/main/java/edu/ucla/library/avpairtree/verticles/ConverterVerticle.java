@@ -10,6 +10,7 @@ import info.freelibrary.util.FileUtils;
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
 
+import edu.ucla.library.avpairtree.AvPtUtils;
 import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.MessageCodes;
@@ -79,7 +80,7 @@ public class ConverterVerticle extends AbstractVerticle {
             final CsvItem csvItem = message.body();
 
             try {
-                final Path inputFilePath = getInputFilePath(csvItem, sourceDir);
+                final Path inputFilePath = AvPtUtils.getInputFilePath(csvItem, sourceDir);
                 final Path outputFilePath = getOutputFilePath(inputFilePath, outputFormat);
                 final EncodingAttributes encoding = new EncodingAttributes();
                 final AudioAttributes audio = new AudioAttributes();
@@ -137,23 +138,5 @@ public class ConverterVerticle extends AbstractVerticle {
         final String outputFileName = baseFileName + Constants.PERIOD + aOutputFormat;
 
         return Path.of(SYSTEM_TMP_DIR, SCRATCH_SPACE, outputFileName);
-    }
-
-    /**
-     * Gets the input file path from available variables.
-     *
-     * @param aCsvItem A CSV item sent to us over the wire
-     * @param aSourceDir A pre-configured source files directory
-     * @return A file system path for the input file
-     */
-    private Path getInputFilePath(final CsvItem aCsvItem, final String aSourceDir) {
-        final String relativeFilePath = aCsvItem.getFilePath();
-
-        // Use our source folder unless we receive a file path that is absolute
-        if (!relativeFilePath.startsWith(Constants.SLASH)) {
-            return Path.of(aSourceDir, relativeFilePath);
-        } else {
-            return Path.of(relativeFilePath);
-        }
     }
 }
