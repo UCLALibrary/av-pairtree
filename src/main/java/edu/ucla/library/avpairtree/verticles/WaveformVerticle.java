@@ -59,14 +59,12 @@ public final class WaveformVerticle extends AbstractVerticle {
         final JsonObject config = config();
         final String[] cmd = { "which", AUDIOWAVEFORM };
         final String cmdline = String.join(SPACE, cmd);
-        final ProcessBuilder pb = new ProcessBuilder(cmd).redirectOutput(ProcessBuilder.Redirect.PIPE);
-
         final String configErrorMsg;
 
         // Make sure that audiowaveform is installed on the system
 
         try {
-            final Process which = pb.start();
+            final Process which = new ProcessBuilder(cmd).start();
             final int exitValue = which.waitFor();
             final InputStream stdout;
             final String cmdResult;
@@ -202,30 +200,28 @@ public final class WaveformVerticle extends AbstractVerticle {
         final String[] cmd = { AUDIOWAVEFORM, "--input-filename", anAudioFilePath.toString(), "--output-format", "dat",
             "--bits", "8" };
         final String cmdline = String.join(SPACE, cmd);
-        final ProcessBuilder pb = new ProcessBuilder(cmd).redirectOutput(ProcessBuilder.Redirect.PIPE);
 
         try {
-            pb.start().onExit().thenAccept(subprocess -> {
-                try (InputStream stdout = subprocess.getInputStream();
-                        InputStream stderr = subprocess.getErrorStream()) {
+            final Process audiowaveform = new ProcessBuilder(cmd).start();
 
-                    final int exitValue = subprocess.exitValue();
+            // Unless we read its output before calling `onExit()`, the audiowaveform process will stay asleep until it
+            // receives an interrupt signal
+            final byte[] stdout = audiowaveform.getInputStream().readAllBytes();
+            final String stderr = new String(audiowaveform.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
 
-                    if (0 == exitValue) {
-                        // Redact the binary audiowaveform data for logging
-                        final String cmdResultMsg = LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue,
-                                "[binary audiowaveform data]");
+            audiowaveform.onExit().thenAccept(process -> {
+                final int exitValue = process.exitValue();
 
-                        LOGGER.debug(cmdResultMsg);
-
-                        asyncResult.complete(ByteBuffer.wrap(stdout.readAllBytes()));
-                    } else {
-                        final String errorOutput = new String(stderr.readAllBytes());
-
-                        asyncResult.fail(LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, errorOutput));
+                if (0 == exitValue) {
+                    for (final String line : stderr.split("\\r?\\n")) {
+                        LOGGER.debug(line);
                     }
-                } catch (final IOException details) {
-                    asyncResult.fail(LOGGER.getMessage(MessageCodes.AVPT_016, cmdline, details));
+                    // Redact the binary audiowaveform data for logging
+                    LOGGER.debug(MessageCodes.AVPT_015, cmdline, exitValue, "[binary audiowaveform data]");
+
+                    asyncResult.complete(ByteBuffer.wrap(stdout));
+                } else {
+                    asyncResult.fail(LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, stderr));
                 }
             });
         } catch (final IOException details) {
