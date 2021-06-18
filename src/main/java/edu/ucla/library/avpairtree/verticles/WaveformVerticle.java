@@ -61,6 +61,8 @@ public final class WaveformVerticle extends AbstractVerticle {
         final String cmdline = String.join(SPACE, cmd);
         final String configErrorMsg;
 
+        LOGGER.debug(MessageCodes.AVPT_011, WaveformVerticle.class.getSimpleName(), Thread.currentThread().getName());
+
         // Make sure that audiowaveform is installed on the system
 
         try {

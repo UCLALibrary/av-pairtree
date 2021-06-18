@@ -78,6 +78,11 @@ public final class Config {
     public static final String CONVERSION_WORKERS = "conversion.workers";
 
     /**
+     * The number of workers that should work to do audiowaveform generation.
+     */
+    public static final String WAVEFORM_WORKERS = "waveform.workers";
+
+    /**
      * The environment variable for the S3 bucket for audio waveforms.
      */
     public static final String AUDIOWAVEFORM_S3_BUCKET = "AUDIOWAVEFORM_S3_BUCKET";
