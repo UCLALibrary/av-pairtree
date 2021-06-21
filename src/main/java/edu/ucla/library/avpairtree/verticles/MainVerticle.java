@@ -132,7 +132,7 @@ public class MainVerticle extends AbstractVerticle {
                     futures.add(deployVerticle(new WatcherVerticle(), aConfig));
                     futures.add(deployVerticle(new PairtreeVerticle(), aConfig));
                     futures.add(deployVerticle(new ConverterVerticle(), aConfig.copy().put(WORKER, true)));
-                    futures.add(deployVerticle(new WaveformVerticle(), aConfig));
+                    futures.add(deployVerticle(new WaveformVerticle(), aConfig.copy().put(WORKER, true)));
 
                     CompositeFuture.all(futures).onSuccess(result -> {
                         startCsvDirWatcher(aConfig).onComplete(startup -> {
@@ -166,8 +166,17 @@ public class MainVerticle extends AbstractVerticle {
 
         // If the configuration for this verticle mentions it should be a worker, find out how many to set
         if (aConfig.getBoolean(WORKER, false)) {
+            final int nWorkerThreads;
+
+            if (ConverterVerticle.class.equals(aVerticle.getClass())) {
+                nWorkerThreads = aConfig.getInteger(Config.CONVERSION_WORKERS, DEFAULT_WORKER_COUNT);
+            } else if (WaveformVerticle.class.equals(aVerticle.getClass())) {
+                nWorkerThreads = aConfig.getInteger(Config.WAVEFORM_WORKERS, DEFAULT_WORKER_COUNT);
+            } else {
+                nWorkerThreads = DEFAULT_WORKER_COUNT;
+            }
             options.setWorker(true).setWorkerPoolName(aVerticle.getClass().getSimpleName());
-            options.setWorkerPoolSize(aConfig.getInteger(Config.CONVERSION_WORKERS, DEFAULT_WORKER_COUNT));
+            options.setWorkerPoolSize(nWorkerThreads);
             options.setMaxWorkerExecuteTime(Integer.MAX_VALUE).setMaxWorkerExecuteTimeUnit(TimeUnit.MINUTES);
 
             LOGGER.debug(MessageCodes.AVPT_012, options.getWorkerPoolName(), options.getWorkerPoolSize());
