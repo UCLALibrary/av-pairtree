@@ -28,5 +28,6 @@
   <entry key="AVPT_020">The environment variable AUDIOWAVEFORM_S3_BUCKET must be set</entry>
   <entry key="AVPT_021">The environment variable AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE must be set</entry>
   <entry key="AVPT_022">Unable to upload audiowaveform for item '{}' to S3: {}</entry>
+  <entry key="AVPT_023">Unable to compress data: {}</entry>
 
 </properties>
