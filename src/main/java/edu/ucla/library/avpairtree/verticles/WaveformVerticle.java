@@ -1,11 +1,12 @@
 package edu.ucla.library.avpairtree.verticles;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.zip.GZIPOutputStream;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
@@ -148,8 +149,9 @@ public final class WaveformVerticle extends AbstractVerticle {
     }
 
     /**
-     * Transforms the source audio file at the given path into audiowaveform data, uploads that data to S3, and replies
-     * to the message with the URL for the data. If either the transformation or upload fails, sends back error details.
+     * Transforms the source audio file at the given path into audiowaveform data, compresses and uploads that data to
+     * S3, and replies to the message with the URL for the compressed data. If either the transformation, compression,
+     * or upload fails, sends back error details.
      *
      * @param aMessage A message with the file path of the audio file to transform
      */
@@ -158,30 +160,37 @@ public final class WaveformVerticle extends AbstractVerticle {
             final CsvItem csvItem = aMessage.body();
             final Path audioFilePath = AvPtUtils.getInputFilePath(csvItem, mySourceDir);
 
-            audiowaveform(audioFilePath).onSuccess(s3ObjectData -> {
+            audiowaveform(audioFilePath).onSuccess(data -> {
                 final String ark = csvItem.getItemARK();
                 final String s3ObjectKey = StringUtils.format(S3_OBJECT_KEY_TEMPLATE, ark);
-                final PutObjectRequest req = PutObjectRequest.builder().bucket(myS3Bucket).key(s3ObjectKey).build();
-                final AsyncRequestBody body = AsyncRequestBody.fromByteBuffer(s3ObjectData);
+                final PutObjectRequest req =
+                        PutObjectRequest.builder().bucket(myS3Bucket).key(s3ObjectKey).contentEncoding("gzip").build();
 
-                // Store the audiowaveform data on S3
-                myS3Client.putObject(req, body).whenComplete((resp, err) -> {
-                    if (resp != null) {
-                        // Success!
-                        final String audiowaveformURL = StringUtils.format(myS3ObjectUrlTemplate,
-                                URLEncoder.encode(s3ObjectKey, StandardCharsets.UTF_8));
+                try {
+                    final byte[] compressedData = gzip(data);
+                    final AsyncRequestBody body = AsyncRequestBody.fromBytes(compressedData);
 
-                        // Reply with a JsonObject associating the item ARK with the URL for the audiowaveform data
-                        aMessage.reply(new JsonObject().put(csvItem.getItemARK(), audiowaveformURL));
-                    } else {
-                        final String s3ErrorMsg =
-                                LOGGER.getMessage(MessageCodes.AVPT_022, s3ObjectKey, err.getMessage());
+                    // Store the compressed audiowaveform data on S3
+                    myS3Client.putObject(req, body).whenComplete((resp, err) -> {
+                        if (resp != null) {
+                            // Success!
+                            final String audiowaveformURL = StringUtils.format(myS3ObjectUrlTemplate,
+                                    URLEncoder.encode(s3ObjectKey, StandardCharsets.UTF_8));
 
-                        // Since the sender (WatcherVerticle) just logs all errors, should be okay to use a single
-                        // failureCode for all errors
-                        aMessage.fail(Op.ERROR_CODE, s3ErrorMsg);
-                    }
-                });
+                            // Reply with a JsonObject associating the item ARK with the URL for the audiowaveform data
+                            aMessage.reply(new JsonObject().put(csvItem.getItemARK(), audiowaveformURL));
+                        } else {
+                            final String s3ErrorMsg =
+                                    LOGGER.getMessage(MessageCodes.AVPT_022, s3ObjectKey, err.getMessage());
+
+                            // Since the sender (WatcherVerticle) just logs all errors, should be okay to use a single
+                            // failureCode for all errors
+                            aMessage.fail(Op.ERROR_CODE, s3ErrorMsg);
+                        }
+                    });
+                } catch (final IOException details) {
+                    aMessage.fail(Op.ERROR_CODE, details.getMessage());
+                }
             }).onFailure(details -> {
                 aMessage.fail(Op.ERROR_CODE, details.getMessage());
             });
@@ -194,11 +203,11 @@ public final class WaveformVerticle extends AbstractVerticle {
      * Transforms the source audio file at the given path into binary audiowaveform data.
      *
      * @param anAudioFilePath The path to the audio file to transform
-     * @return A Future that is completed with a ByteBuffer containing the audiowaveform data
+     * @return A Future that is completed with a byte array containing the audiowaveform data
      * @throws IOException if an I/O error occurs during the execution of the audiowaveform program
      */
-    private Future<ByteBuffer> audiowaveform(final Path anAudioFilePath) throws IOException {
-        final Promise<ByteBuffer> asyncResult = Promise.promise();
+    private Future<byte[]> audiowaveform(final Path anAudioFilePath) throws IOException {
+        final Promise<byte[]> asyncResult = Promise.promise();
         final String[] cmd = { AUDIOWAVEFORM, "--input-filename", anAudioFilePath.toString(), "--output-format", "dat",
             "--bits", "8" };
         final String cmdline = String.join(SPACE, cmd);
@@ -221,7 +230,7 @@ public final class WaveformVerticle extends AbstractVerticle {
                     // Redact the binary audiowaveform data for logging
                     LOGGER.debug(MessageCodes.AVPT_015, cmdline, exitValue, "[binary audiowaveform data]");
 
-                    asyncResult.complete(ByteBuffer.wrap(stdout));
+                    asyncResult.complete(stdout);
                 } else {
                     asyncResult.fail(LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, stderr));
                 }
@@ -231,5 +240,25 @@ public final class WaveformVerticle extends AbstractVerticle {
         }
 
         return asyncResult.future();
+    }
+
+    /**
+     * Compresses the data in the given byte array to GZIP format.
+     *
+     * @param aByteArray The uncompressed data
+     * @return The compressed data
+     * @throws IOException if an I/O error occurs during the data compression
+     */
+    private byte[] gzip(final byte[] aByteArray) throws IOException {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        try (GZIPOutputStream gz = new GZIPOutputStream(outputStream)) {
+            gz.write(aByteArray);
+            gz.finish();
+
+            return outputStream.toByteArray();
+        } catch (final IOException details) {
+            throw new IOException(LOGGER.getMessage(MessageCodes.AVPT_023, details));
+        }
     }
 }

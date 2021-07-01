@@ -162,7 +162,7 @@
         <excludes>
           <exclude>synanon/video/synanon.mp4</exclude>
           <exclude>soul/audio/uclapasc.wav</exclude>
-          <exclude>soul/audio/uclapasc.dat</exclude>
+          <exclude>soul/audio/uclapasc.dat.gz</exclude>
         </excludes>
       </testResource>
     </testResources>
