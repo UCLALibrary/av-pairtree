@@ -52,14 +52,28 @@ public class WaveformVerticleTest extends AbstractAvPtTest {
 
             WebClient.create(vertx).getAbs(audiowaveformURL).send().onSuccess(resp -> {
                 final Buffer expected =
-                        vertx.fileSystem().readFileBlocking("src/test/resources/soul/audio/uclapasc.dat");
+                        vertx.fileSystem().readFileBlocking("src/test/resources/soul/audio/uclapasc.dat.gz");
                 final Buffer actual = resp.body();
 
+                // Partition the GZIP data into the header, body, and footer (according to RFC 1952)
+                final Buffer expectedHeader = expected.getBuffer(0, 10);
+                final Buffer actualHeader = actual.getBuffer(0, 10);
+
+                final Buffer expectedBody = expected.getBuffer(10, expected.length() - 8);
+                final Buffer actualBody = actual.getBuffer(10, actual.length() - 8);
+
+                final Buffer expectedFooter = expected.getBuffer(expected.length() - 8, expected.length());
+                final Buffer actualFooter = actual.getBuffer(actual.length() - 8, actual.length());
+
                 try {
-                    assertEquals(expected, actual);
+                    // Apparently JDK 11 doesn't implement RFC 1952 correctly (i.e., it always sets the OS field (the
+                    // last byte in the header) to "0"), so only compare the first nine bytes
+                    assertEquals(expectedHeader.getBuffer(0, expectedHeader.length() - 1),
+                            actualHeader.getBuffer(0, actualHeader.length() - 1));
+                    assertEquals(expectedBody, actualBody);
+                    assertEquals(expectedFooter, actualFooter);
                 } catch (final AssertionError details) {
-                    LOGGER.error(details, details.getMessage());
-                    aContext.fail();
+                    aContext.fail(details);
                 } finally {
                     // TODO: clean up the S3 bucket
                     asyncTask.complete();
