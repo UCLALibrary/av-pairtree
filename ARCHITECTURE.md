@@ -40,11 +40,9 @@ Actions (e.g., the parsing of CSV files, conversion of media files, or storage o
 
 ## Sequence Diagram
 
-The sequence diagram below illustrates the order of events that happen as the av-pairtree program processes an A/V file and puts it into a [Pairtree](https://tools.ietf.org/html/draft-kunze-pairtree-01) directory structure.
+The sequence diagram below illustrates the order of events that happen as the av-pairtree program processes a CSV:
 
 ![Sequence diagram for av-pairtree's workflow](docs/images/av_pairtree_sequence.svg)
-
-A single CSV file might contain both audio and media files, so av-pairtree loops through both processes in the sequence diagram as it parses content from the supplied CSV file. It also loops through CSV submissions, since more than one CSV can be submitted via the drop box.
 
 ## Configuration Options
 
