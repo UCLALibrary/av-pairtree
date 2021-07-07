@@ -21,42 +21,42 @@ sequenceDiagram
         loop for each item
             alt is audio
                 par Converts to MP4 and inserts into Pairtree
-                WatcherVerticle->>ConverterVerticle: Sends audio file for conversion to MP3
-                activate ConverterVerticle
+                    WatcherVerticle->>ConverterVerticle: Sends audio file for conversion to MP3
+                    activate ConverterVerticle
 
-                ConverterVerticle->>FFmpeg: Invokes FFmpeg
-                activate FFmpeg
+                    ConverterVerticle->>FFmpeg: Invokes FFmpeg
+                    activate FFmpeg
 
-                FFmpeg->>File System: Writes temporary MP4 audio file
-                FFmpeg-->>ConverterVerticle: FFmpeg exits
-                deactivate FFmpeg
+                    FFmpeg->>File System: Writes temporary MP4 audio file
+                    FFmpeg-->>ConverterVerticle: FFmpeg exits
+                    deactivate FFmpeg
 
-                ConverterVerticle->>PairtreeVerticle: Sends converted audio file for insertion into Pairtree
-                activate PairtreeVerticle
+                    ConverterVerticle->>PairtreeVerticle: Sends converted audio file for insertion into Pairtree
+                    activate PairtreeVerticle
 
-                PairtreeVerticle->>File System: Reads temporary MP4 audio file
-                PairtreeVerticle-->>ConverterVerticle: Notifies of successful Pairtree insertion
-                deactivate PairtreeVerticle
+                    PairtreeVerticle->>File System: Reads temporary MP4 audio file
+                    PairtreeVerticle-->>ConverterVerticle: Notifies of successful Pairtree insertion
+                    deactivate PairtreeVerticle
 
-                ConverterVerticle->>File System: Deletes temporary MP4 audio file
-                ConverterVerticle-->>WatcherVerticle: Notifies of successful conversion and insertion
-                deactivate ConverterVerticle
+                    ConverterVerticle->>File System: Deletes temporary MP4 audio file
+                    ConverterVerticle-->>WatcherVerticle: Notifies of successful conversion and insertion
+                    deactivate ConverterVerticle
                 and Generates waveform data and stores on Amazon S3
-                WatcherVerticle->>WaveformVerticle: Sends audio file for waveform generation
-                activate WaveformVerticle
+                    WatcherVerticle->>WaveformVerticle: Sends audio file for waveform generation
+                    activate WaveformVerticle
 
-                WaveformVerticle->>audiowaveform: Invokes audiowaveform
-                activate audiowaveform
+                    WaveformVerticle->>audiowaveform: Invokes audiowaveform
+                    activate audiowaveform
 
-                audiowaveform-->>WaveformVerticle: audiowaveform exits
-                deactivate audiowaveform
+                    audiowaveform-->>WaveformVerticle: audiowaveform exits
+                    deactivate audiowaveform
 
-                WaveformVerticle->>WaveformVerticle: Compresses waveform data to GZIP format
+                    WaveformVerticle->>WaveformVerticle: Compresses waveform data to GZIP format
 
-                WaveformVerticle->>Amazon S3: Stores compressed waveform data on Amazon S3
+                    WaveformVerticle->>Amazon S3: Stores compressed waveform data on Amazon S3
 
-                WaveformVerticle-->>WatcherVerticle: Notifies of successful waveform generation and storage
-                deactivate WaveformVerticle
+                    WaveformVerticle-->>WatcherVerticle: Notifies of successful waveform generation and storage
+                    deactivate WaveformVerticle
                 end
             else is video
                 WatcherVerticle->>PairtreeVerticle: Sends video file for insertion into Pairtree
