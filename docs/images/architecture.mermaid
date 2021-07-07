@@ -1,25 +1,54 @@
 sequenceDiagram
 
+    participant MainVerticle;
+    participant WatcherVerticle;
+    participant ConverterVerticle;
+    participant FFmpeg;
+    participant PairtreeVerticle;
+    participant File System;
+
+    activate MainVerticle
+
     MainVerticle->>File System: Set up file system watcher
 
     loop
         File System->>WatcherVerticle: Sends new/updated CSV event
+        activate WatcherVerticle
 
-        loop
-            WatcherVerticle->>ConverterVerticle: Sends item / audio file conversion request
-            ConverterVerticle->>File System: Writes temporary MP4 audio file
-            ConverterVerticle->>PairtreeVerticle: Sends item with audio file for insertion into Pairtree
-            File System->>PairtreeVerticle: Reads temporary MP4 audio file
-            PairtreeVerticle->>ConverterVerticle: Notifies of successful Pairtree insertion
-            ConverterVerticle->>File System: Deletes temporary MP4 audio file
-            ConverterVerticle->>WatcherVerticle: Sends end of loop notification
-        end
+        loop for each item
+            alt is audio
+                WatcherVerticle->>ConverterVerticle: Sends audio file for conversion to MP3
+                activate ConverterVerticle
 
-        loop
-            WatcherVerticle->>PairtreeVerticle: Sends item with video file for insertion into Pairtree
-            File System->>PairtreeVerticle: Reads MP4 video file
-            PairtreeVerticle->>WatcherVerticle: Sends end of loop notification
+                ConverterVerticle->>FFmpeg: Invokes FFmpeg
+                activate FFmpeg
+
+                FFmpeg->>File System: Writes temporary MP4 audio file
+                FFmpeg-->>ConverterVerticle: FFmpeg exits
+                deactivate FFmpeg
+
+                ConverterVerticle->>PairtreeVerticle: Sends converted audio file for insertion into Pairtree
+                activate PairtreeVerticle
+
+                PairtreeVerticle->>File System: Reads temporary MP4 audio file
+                PairtreeVerticle-->>ConverterVerticle: Notifies of successful Pairtree insertion
+                deactivate PairtreeVerticle
+
+                ConverterVerticle->>File System: Deletes temporary MP4 audio file
+                ConverterVerticle-->>WatcherVerticle: Notifies of successful conversion and insertion
+                deactivate ConverterVerticle
+            else is video
+                WatcherVerticle->>PairtreeVerticle: Sends video file for insertion into Pairtree
+                activate PairtreeVerticle
+
+                PairtreeVerticle->>File System: Reads MP4 video file
+                PairtreeVerticle-->>WatcherVerticle: Notifies of successful Pairtree insertion
+                deactivate PairtreeVerticle
+            end
         end
 
         WatcherVerticle->>File System: Writes modified CSV file
+        deactivate WatcherVerticle
     end
+
+    deactivate MainVerticle
