@@ -48,6 +48,10 @@ Audio processing details:
 
 ![Sequence diagram for av-pairtree's audio processing workflow](docs/images/sequence_audio.svg)
 
+Video processing details:
+
+![Sequence diagram for av-pairtree's video processing workflow](docs/images/sequence_video.svg)
+
 ## Configuration Options
 
 The sample configuration file for the project can be found in the project's test resources directory: `src/test/resources/test-config.properties`. This configuration is also what's used when running the project's tests.

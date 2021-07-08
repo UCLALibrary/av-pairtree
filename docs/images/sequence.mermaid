@@ -2,10 +2,7 @@ sequenceDiagram
 
     participant MainVerticle;
     participant WatcherVerticle;
-    participant ConverterVerticle;
-    participant PairtreeVerticle;
     participant File System;
-    participant WaveformVerticle;
 
     activate MainVerticle
 
@@ -17,22 +14,9 @@ sequenceDiagram
 
         loop for each item
             alt is audio
-                activate ConverterVerticle
-                activate PairtreeVerticle
-                activate WaveformVerticle
-
-                note over WatcherVerticle,WaveformVerticle: In parallel:<br>(1) converts audio to MP4 and inserts into Pairtree, and<br>(2) generates waveform data and stores on Amazon S3.<br>See diagram below for details.
-
-                deactivate ConverterVerticle
-                deactivate PairtreeVerticle
-                deactivate WaveformVerticle
+                note right of WatcherVerticle: In parallel:<br>(1) converts audio to MP4 and inserts into Pairtree, and<br>(2) generates waveform data and stores on Amazon S3.<br>See audio sequence diagram below for details.
             else is video
-                WatcherVerticle->>PairtreeVerticle: Sends video file for insertion into Pairtree
-                activate PairtreeVerticle
-
-                PairtreeVerticle->>File System: Reads MP4 video file
-                PairtreeVerticle-->>WatcherVerticle: Notifies of successful Pairtree insertion
-                deactivate PairtreeVerticle
+                note right of WatcherVerticle: Inserts video MP4 into Pairtree.<br>See video sequence diagram below for details.
             end
         end
 
