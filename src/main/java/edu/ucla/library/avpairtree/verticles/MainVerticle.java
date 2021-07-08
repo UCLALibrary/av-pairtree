@@ -167,30 +167,31 @@ public class MainVerticle extends AbstractVerticle {
 
         // If the configuration for this verticle mentions it should be a worker, find out how many to set
         if (aConfig.getBoolean(WORKER, false)) {
-            final int nWorkerThreads;
+            final int nWorkerInstances;
 
             if (ConverterVerticle.class.equals(verticleClass)) {
-                nWorkerThreads = aConfig.getInteger(Config.CONVERSION_WORKERS, DEFAULT_WORKER_COUNT);
+                nWorkerInstances = aConfig.getInteger(Config.CONVERSION_WORKERS, DEFAULT_WORKER_COUNT);
             } else if (WaveformVerticle.class.equals(verticleClass)) {
-                nWorkerThreads = aConfig.getInteger(Config.WAVEFORM_WORKERS, DEFAULT_WORKER_COUNT);
+                nWorkerInstances = aConfig.getInteger(Config.WAVEFORM_WORKERS, DEFAULT_WORKER_COUNT);
             } else {
-                nWorkerThreads = DEFAULT_WORKER_COUNT;
+                nWorkerInstances = DEFAULT_WORKER_COUNT;
             }
             options.setWorker(true).setWorkerPoolName(verticleClass.getSimpleName());
-            options.setWorkerPoolSize(nWorkerThreads);
+            options.setInstances(nWorkerInstances);
             options.setMaxWorkerExecuteTime(Integer.MAX_VALUE).setMaxWorkerExecuteTimeUnit(TimeUnit.MINUTES);
 
-            LOGGER.debug(MessageCodes.AVPT_012, options.getWorkerPoolName(), options.getWorkerPoolSize());
+            LOGGER.debug(MessageCodes.AVPT_012, options.getInstances(), options.getWorkerPoolName());
         }
 
-        vertx.deployVerticle(verticleClass.getCanonicalName(), options).onSuccess(
-            deploymentID -> mapDeploymentID(verticleClass.getName(), deploymentID).onComplete(mapping -> {
+        vertx.deployVerticle(verticleClass.getName(), options).onSuccess(deploymentID -> {
+            mapDeploymentID(verticleClass.getName(), deploymentID).onComplete(mapping -> {
                 if (mapping.succeeded()) {
                     promise.complete();
                 } else {
                     promise.fail(mapping.cause());
                 }
-            })).onFailure(error -> promise.fail(error));
+            });
+        }).onFailure(error -> promise.fail(error));
 
         return promise.future();
     }

@@ -62,6 +62,11 @@ public final class Config {
     public static final String ENCODING_FORMAT = "audio.encoding.format";
 
     /**
+     * The configuration property for the number of threads to use in FFmpeg encoding.
+     */
+    public static final String ENCODING_THREADS = "audio.encoding.threads";
+
+    /**
      * A configuration property for the pattern for creating IIIF access URLs.
      */
     public static final String ACCESS_URL_PATTERN = "iiif.access.url";

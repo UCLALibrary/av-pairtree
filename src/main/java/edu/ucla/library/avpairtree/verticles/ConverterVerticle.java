@@ -93,6 +93,7 @@ public class ConverterVerticle extends AbstractVerticle {
 
                 encoding.setOutputFormat(outputFormat);
                 encoding.setAudioAttributes(audio);
+                encoding.setEncodingThreads(config.getInteger(Config.ENCODING_THREADS));
 
                 encoder.encode(new MultimediaObject(inputFilePath.toFile()), outputFilePath.toFile(), encoding);
                 csvItem.setFilePath(outputFilePath.toAbsolutePath().toString());

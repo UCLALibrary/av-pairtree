@@ -67,6 +67,7 @@ The properties and default values for an av-pairtree configuration file are as f
 | audio.codec | The audio codec to use inside the encoding wrapper | aac |
 | audio.bit.rate | The bit rate used to encoding the audio stream | 128000 |
 | audio.channels | The number of channels in the audio stream | 2 |
+| audio.encoding.threads | The number of threads to use in audio encoding | 0 (all available) |
 | iiif.access.url | The URL pattern into which to insert the Pairtree path | N/A |
 | conversion.workers | The number of cores to use for audio file conversion | 2 |
 | waveform.workers | The number of cores to use for audiowaveform generation | 2 |
