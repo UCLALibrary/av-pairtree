@@ -375,7 +375,7 @@
                 <id>test-vertx-startup</id>
                 <phase>test</phase>
                 <goals>
-                  <goal>debug</goal>
+                  <goal>run</goal>
                 </goals>
               </execution>
             </executions>
