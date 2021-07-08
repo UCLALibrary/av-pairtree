@@ -15,6 +15,6 @@ To generate the sequence diagrams from the mermaid source:
 2. Run:
 
     ```bash
-    ./node_modules/.bin/mmdc -i docs/images/architecture.mermaid -o docs/images/av_pairtree_sequence.svg
-    ./node_modules/.bin/mmdc -i docs/images/av_pairtree_sequence_audio.mermaid -o docs/images/av_pairtree_sequence_audio.svg
+    ./node_modules/.bin/mmdc -i docs/images/sequence.mermaid -o docs/images/sequence.svg
+    ./node_modules/.bin/mmdc -i docs/images/sequence_audio.mermaid -o docs/images/sequence_audio.svg
     ```

@@ -13,7 +13,7 @@ The processing of video files (which are MP4s by default) involves putting them 
 
 After all the A/V files in a CSV file have been processed, the input CSV is updated to include the resources' new access URLs (i.e. the URLs of the media files as served by the media server) and audiowaveform URLs, then written back out to the file system.
 
-![Overview diagram for av-pairtree's components](docs/images/av_pairtree_overview.svg)
+![Overview diagram for av-pairtree's components](docs/images/overview.svg)
 
 ## Expected CSV Structure
 
@@ -42,11 +42,11 @@ Actions (e.g., the parsing of CSV files, conversion of media files, or storage o
 
 The sequence diagrams below illustrate the order of events that happen as the av-pairtree program processes a CSV:
 
-![Sequence diagram for av-pairtree's workflow](docs/images/av_pairtree_sequence.svg)
+![Sequence diagram for av-pairtree's workflow](docs/images/sequence.svg)
 
 Audio processing details:
 
-![Sequence diagram for av-pairtree's audio processing workflow](docs/images/av_pairtree_sequence_audio.svg)
+![Sequence diagram for av-pairtree's audio processing workflow](docs/images/sequence_audio.svg)
 
 ## Configuration Options
 
