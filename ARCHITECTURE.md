@@ -70,7 +70,6 @@ The properties and default values for an av-pairtree configuration file are as f
 | audio.encoding.threads | The number of threads to use in audio encoding | 0 (all available) |
 | iiif.access.url | The URL pattern into which to insert the Pairtree path | N/A |
 | conversion.workers | The number of cores to use for audio file conversion | 2 |
-| pairtree.workers | The number of cores to use for pairtree insertion | 2 |
 | waveform.workers | The number of cores to use for audiowaveform generation | 2 |
 
 ## Documentation
