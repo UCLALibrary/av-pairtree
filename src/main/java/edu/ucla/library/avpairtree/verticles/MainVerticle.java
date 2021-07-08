@@ -163,27 +163,28 @@ public class MainVerticle extends AbstractVerticle {
     private Future<Void> deployVerticle(final Verticle aVerticle, final JsonObject aConfig) {
         final DeploymentOptions options = new DeploymentOptions().setConfig(aConfig);
         final Promise<Void> promise = Promise.promise();
+        final Class<?> verticleClass = aVerticle.getClass();
 
         // If the configuration for this verticle mentions it should be a worker, find out how many to set
         if (aConfig.getBoolean(WORKER, false)) {
             final int nWorkerThreads;
 
-            if (ConverterVerticle.class.equals(aVerticle.getClass())) {
+            if (ConverterVerticle.class.equals(verticleClass)) {
                 nWorkerThreads = aConfig.getInteger(Config.CONVERSION_WORKERS, DEFAULT_WORKER_COUNT);
-            } else if (WaveformVerticle.class.equals(aVerticle.getClass())) {
+            } else if (WaveformVerticle.class.equals(verticleClass)) {
                 nWorkerThreads = aConfig.getInteger(Config.WAVEFORM_WORKERS, DEFAULT_WORKER_COUNT);
             } else {
                 nWorkerThreads = DEFAULT_WORKER_COUNT;
             }
-            options.setWorker(true).setWorkerPoolName(aVerticle.getClass().getSimpleName());
+            options.setWorker(true).setWorkerPoolName(verticleClass.getSimpleName());
             options.setWorkerPoolSize(nWorkerThreads);
             options.setMaxWorkerExecuteTime(Integer.MAX_VALUE).setMaxWorkerExecuteTimeUnit(TimeUnit.MINUTES);
 
             LOGGER.debug(MessageCodes.AVPT_012, options.getWorkerPoolName(), options.getWorkerPoolSize());
         }
 
-        vertx.deployVerticle(aVerticle, options).onSuccess(
-            deploymentID -> mapDeploymentID(aVerticle.getClass().getName(), deploymentID).onComplete(mapping -> {
+        vertx.deployVerticle(verticleClass.getCanonicalName(), options).onSuccess(
+            deploymentID -> mapDeploymentID(verticleClass.getName(), deploymentID).onComplete(mapping -> {
                 if (mapping.succeeded()) {
                     promise.complete();
                 } else {
