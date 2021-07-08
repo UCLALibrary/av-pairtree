@@ -40,9 +40,13 @@ Actions (e.g., the parsing of CSV files, conversion of media files, or storage o
 
 ## Sequence Diagram
 
-The sequence diagram below illustrates the order of events that happen as the av-pairtree program processes a CSV:
+The sequence diagrams below illustrate the order of events that happen as the av-pairtree program processes a CSV:
 
 ![Sequence diagram for av-pairtree's workflow](docs/images/av_pairtree_sequence.svg)
+
+Audio processing details:
+
+![Sequence diagram for av-pairtree's audio processing workflow](docs/images/av_pairtree_sequence_audio.svg)
 
 ## Configuration Options
 
@@ -90,7 +94,7 @@ The project uses [Logback](https://logback.qos.ch/) for logging. Information abo
 
 ## I18N Resources
 
-All messages and logs that the program outputs can be internationalized. This is accomplished through the use of a resource bundle file in the [`src/main/resources`](https://github.com/UCLALibrary/av-pairtree/tree/main/src/main/resources) directory. The file's name is `av-pairtree_messages.xml`. An internationalized version of the file can be created by adding a new file with some addition I18N information in its name (for instance: `av-pairtree_messages_pl_PL.xml` would be a Polish version of the message bundle). 
+All messages and logs that the program outputs can be internationalized. This is accomplished through the use of a resource bundle file in the [`src/main/resources`](https://github.com/UCLALibrary/av-pairtree/tree/main/src/main/resources) directory. The file's name is `av-pairtree_messages.xml`. An internationalized version of the file can be created by adding a new file with some addition I18N information in its name (for instance: `av-pairtree_messages_pl_PL.xml` would be a Polish version of the message bundle).
 
 All text that is added to the file can be accessed by loggers like:
 
