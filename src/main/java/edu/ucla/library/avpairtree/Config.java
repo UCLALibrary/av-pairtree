@@ -83,6 +83,11 @@ public final class Config {
     public static final String CONVERSION_WORKERS = "conversion.workers";
 
     /**
+     * The number of workers that should work to do pairtree insertions.
+     */
+    public static final String PAIRTREE_WORKERS = "pairtree.workers";
+
+    /**
      * The number of workers that should work to do audiowaveform generation.
      */
     public static final String WAVEFORM_WORKERS = "waveform.workers";

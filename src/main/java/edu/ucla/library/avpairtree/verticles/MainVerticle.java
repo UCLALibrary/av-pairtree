@@ -130,7 +130,7 @@ public class MainVerticle extends AbstractVerticle {
                     final List<Future> futures = new ArrayList<>();
 
                     futures.add(deployVerticle(new WatcherVerticle(), aConfig));
-                    futures.add(deployVerticle(new PairtreeVerticle(), aConfig));
+                    futures.add(deployVerticle(new PairtreeVerticle(), aConfig.copy().put(WORKER, true)));
                     futures.add(deployVerticle(new ConverterVerticle(), aConfig.copy().put(WORKER, true)));
                     futures.add(deployVerticle(new WaveformVerticle(), aConfig.copy().put(WORKER, true)));
 
@@ -171,6 +171,8 @@ public class MainVerticle extends AbstractVerticle {
 
             if (ConverterVerticle.class.equals(verticleClass)) {
                 nWorkerInstances = aConfig.getInteger(Config.CONVERSION_WORKERS, DEFAULT_WORKER_COUNT);
+            } else if (PairtreeVerticle.class.equals(verticleClass)) {
+                nWorkerInstances = aConfig.getInteger(Config.PAIRTREE_WORKERS, DEFAULT_WORKER_COUNT);
             } else if (WaveformVerticle.class.equals(verticleClass)) {
                 nWorkerInstances = aConfig.getInteger(Config.WAVEFORM_WORKERS, DEFAULT_WORKER_COUNT);
             } else {
