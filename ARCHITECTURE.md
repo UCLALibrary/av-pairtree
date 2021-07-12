@@ -13,7 +13,7 @@ The processing of video files (which are MP4s by default) involves putting them 
 
 After all the A/V files in a CSV file have been processed, the input CSV is updated to include the resources' new access URLs (i.e. the URLs of the media files as served by the media server) and audiowaveform URLs, then written back out to the file system.
 
-![Overview diagram for av-pairtree's components](docs/images/av_pairtree_overview.svg)
+![Overview diagram for av-pairtree's components](docs/images/overview.svg)
 
 ## Expected CSV Structure
 
@@ -40,11 +40,17 @@ Actions (e.g., the parsing of CSV files, conversion of media files, or storage o
 
 ## Sequence Diagram
 
-The sequence diagram below illustrates the order of events that happen as the av-pairtree program processes an A/V file and puts it into a [Pairtree](https://tools.ietf.org/html/draft-kunze-pairtree-01) directory structure.
+The sequence diagrams below illustrate the order of events that happen as the av-pairtree program processes a CSV:
 
-![Sequence diagram for av-pairtree's workflow](docs/images/av_pairtree_sequence.svg)
+![Sequence diagram for av-pairtree's workflow](docs/images/sequence.svg)
 
-A single CSV file might contain both audio and media files, so av-pairtree loops through both processes in the sequence diagram as it parses content from the supplied CSV file. It also loops through CSV submissions, since more than one CSV can be submitted via the drop box.
+Audio processing details:
+
+![Sequence diagram for av-pairtree's audio processing workflow](docs/images/sequence_audio.svg)
+
+Video processing details:
+
+![Sequence diagram for av-pairtree's video processing workflow](docs/images/sequence_video.svg)
 
 ## Configuration Options
 
@@ -92,7 +98,7 @@ The project uses [Logback](https://logback.qos.ch/) for logging. Information abo
 
 ## I18N Resources
 
-All messages and logs that the program outputs can be internationalized. This is accomplished through the use of a resource bundle file in the [`src/main/resources`](https://github.com/UCLALibrary/av-pairtree/tree/main/src/main/resources) directory. The file's name is `av-pairtree_messages.xml`. An internationalized version of the file can be created by adding a new file with some addition I18N information in its name (for instance: `av-pairtree_messages_pl_PL.xml` would be a Polish version of the message bundle). 
+All messages and logs that the program outputs can be internationalized. This is accomplished through the use of a resource bundle file in the [`src/main/resources`](https://github.com/UCLALibrary/av-pairtree/tree/main/src/main/resources) directory. The file's name is `av-pairtree_messages.xml`. An internationalized version of the file can be created by adding a new file with some addition I18N information in its name (for instance: `av-pairtree_messages_pl_PL.xml` would be a Polish version of the message bundle).
 
 All text that is added to the file can be accessed by loggers like:
 
