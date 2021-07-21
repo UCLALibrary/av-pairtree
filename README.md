@@ -11,28 +11,6 @@ In addition to a [JDK (>= 11)](https://adoptopenjdk.net/) installed and configur
 
 There are two sets of build instructions: one for systems with [Maven](https://maven.apache.org/) pre-installed and one for systems without Maven.
 
-## Setting AWS credentials for integration tests
-
-In order to run the integration tests that use AWS S3, you should have an entry like the following in the `profiles` section of your `/home/.m2/settings.xml` (or another settings file elsewhere):
-
-```xml
-<profile>
-  <id>av-pairtree</id>
-  <activation>
-    <property>
-      <name>!skipDefaultProfile</name>
-    </property>
-  </activation>
-  <properties>
-    <avpt.s3.access_key>myAwsAccessKey</avpt.s3.access_key>
-    <avpt.s3.bucket>myAwsS3Bucket</avpt.s3.bucket>
-    <avpt.s3.object.url.template>https://${avpt.s3.bucket}.s3-${avpt.s3.region}.amazonaws.com/{}</avpt.s3.object.url.template>
-    <avpt.s3.region>us-west-2</avpt.s3.region>
-    <avpt.s3.secret_key>myAwsSecretKey</avpt.s3.secret_key>
-  </properties>
-</profile>
-```
-
 ## Building and testing locally without Maven pre-installed
 
 To build the project the first time, type:

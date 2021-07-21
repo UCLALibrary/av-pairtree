@@ -97,6 +97,11 @@ public final class Config {
      */
     public static final String AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE = "AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE";
 
+    /**
+     * The environment variable for the S3 endpoint URL (only set if the backend is Localstack).
+     */
+    public static final String AWS_ENDPOINT_URL = "AWS_ENDPOINT_URL";
+
     // Constant classes should have private constructors.
     private Config() {
     }

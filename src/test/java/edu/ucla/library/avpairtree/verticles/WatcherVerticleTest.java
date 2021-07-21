@@ -18,9 +18,11 @@ import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.utils.TestConstants;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -36,6 +38,8 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
     private static final String OUT_EXT = ".out";
 
     private static final String CSV_EXT = ".csv";
+
+    private static final String TEMPLATE_MP4_EXT = ".mp4{}";
 
     /**
      * Tests the watcher's CSV parsing and submission of video conversion jobs.
@@ -83,13 +87,21 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
     public void testWatcherAudioCsvParsing(final TestContext aContext) {
         LOGGER.debug(MessageCodes.AVPT_003, myNames.getMethodName());
 
+        final String csvFilePath = TestConstants.CSV_DIR + TestConstants.SOUL;
         final int expectedUpdates = 175; // We have 175 audio files in our sample CSV file
         final Async asyncTask = aContext.async(expectedUpdates + 1); // Add one more check before completing
         final Vertx vertx = myContext.vertx();
 
-        // Replace the verticle that receives the watcher verticle's video output with our simple mock verticle
-        undeployVerticle(ConverterVerticle.class.getName()).onSuccess(result -> {
-            final String csvFilePath = TestConstants.CSV_DIR + TestConstants.SOUL;
+        final CompositeFuture undeployments = CompositeFuture.all(undeployVerticle(WaveformVerticle.class.getName()),
+                undeployVerticle(ConverterVerticle.class.getName()));
+
+        undeployments.compose(result -> {
+            // Mock the verticles that receive messages from watcher verticle
+            vertx.eventBus().<CsvItem>consumer(WaveformVerticle.class.getName()).handler(message -> {
+                final String ark = message.body().getItemARK();
+
+                message.reply(new JsonObject().put(ark, "http://example.com/" + ark + TEMPLATE_MP4_EXT));
+            });
 
             vertx.eventBus().<CsvItem>consumer(ConverterVerticle.class.getName()).handler(message -> {
                 final CsvItem found = message.body();
@@ -100,15 +112,15 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
             });
 
             // Send a message with the CSV file location to the watcher verticle
-            vertx.eventBus().request(WatcherVerticle.class.getName(), csvFilePath).onSuccess(request -> {
-                checkOutput(csvFilePath.replace(CSV_EXT, OUT_EXT), expectedUpdates, aContext).onComplete(check -> {
-                    if (check.succeeded()) {
-                        asyncTask.countDown();
-                    } else {
-                        aContext.fail(check.cause());
-                    }
-                });
-            }).onFailure(error -> aContext.fail(error));
+            return vertx.eventBus().<CsvItem>request(WatcherVerticle.class.getName(), csvFilePath);
+        }).compose(result -> {
+            return checkOutput(csvFilePath.replace(CSV_EXT, OUT_EXT), expectedUpdates, aContext);
+        }).onComplete(check -> {
+            if (check.succeeded()) {
+                asyncTask.countDown();
+            } else {
+                aContext.fail(check.cause());
+            }
         }).onFailure(error -> aContext.fail(error));
     }
 
@@ -136,7 +148,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
             final AtomicInteger counter = new AtomicInteger(0);
 
             reader.lines().forEach(line -> {
-                if (line.contains(avServer) && line.contains(".mp4{}")) {
+                if (line.contains(avServer) && line.contains(TEMPLATE_MP4_EXT)) {
                     counter.incrementAndGet();
                 }
             });

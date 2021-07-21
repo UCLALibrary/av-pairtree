@@ -19,6 +19,7 @@ import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
 import edu.ucla.library.avpairtree.handlers.StatusHandler;
 import edu.ucla.library.avpairtree.handlers.AmazonS3WaveformConsumer;
+import edu.ucla.library.avpairtree.handlers.LocalstackS3WaveformConsumer;
 
 import io.methvin.watcher.DirectoryWatcher;
 
@@ -140,8 +141,13 @@ public class MainVerticle extends AbstractVerticle {
                     CompositeFuture.all(futures).onSuccess(result -> {
                         try {
                             // Configure the waveform consumer
-                            vertx.eventBus().<byte[]>consumer(WAVEFORM_CONSUMER,
-                                    new AmazonS3WaveformConsumer(aConfig)::handle);
+                            if (aConfig.containsKey(Config.AWS_ENDPOINT_URL)) {
+                                vertx.eventBus().<byte[]>consumer(WAVEFORM_CONSUMER,
+                                        new LocalstackS3WaveformConsumer(aConfig)::handle);
+                            } else {
+                                vertx.eventBus().<byte[]>consumer(WAVEFORM_CONSUMER,
+                                        new AmazonS3WaveformConsumer(aConfig)::handle);
+                            }
 
                             startCsvDirWatcher(aConfig).onComplete(startup -> {
                                 // Register the codec for passing CsvItem(s) over the event bus

@@ -43,24 +43,18 @@
     <freelib.maven.version>0.1.2</freelib.maven.version>
 
     <!-- Test dependency versions -->
-    <testcontainers.version>1.15.2</testcontainers.version>
+    <docker.plugin.version>0.36.1</docker.plugin.version>
 
     <!-- Name of the main Vert.x verticle -->
     <main.verticle>edu.ucla.library.avpairtree.verticles.MainVerticle</main.verticle>
 
     <!-- Testing properties -->
     <live.test.reloads>false</live.test.reloads>
+    <localstack.edge.port>4566</localstack.edge.port>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>testcontainers-bom</artifactId>
-        <version>${testcontainers.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-stack-depchain</artifactId>
@@ -262,9 +256,30 @@
             <vertx.logger-delegate-factory-class-name>io.vertx.core.logging.SLF4JLogDelegateFactory</vertx.logger-delegate-factory-class-name>
             <vertx-config-path>${project.basedir}/target/test-classes/test-config.properties</vertx-config-path>
           </systemPropertyVariables>
+          <environmentVariables>
+            <AUDIOWAVEFORM_S3_BUCKET>test-audiowaveform-resources</AUDIOWAVEFORM_S3_BUCKET>
+            <AWS_ENDPOINT_URL>http://localhost:${localstack.edge.port}</AWS_ENDPOINT_URL>
+          </environmentVariables>
           <forkCount>1</forkCount>
           <argLine>${jacoco.agent.arg}</argLine>
         </configuration>
+        <executions>
+          <execution>
+            <id>integration-tests</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/*Test.java</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>io.reactiverse</groupId>
@@ -276,6 +291,47 @@
             <goals>
               <goal>initialize</goal>
               <goal>package</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>${docker.plugin.version}</version>
+        <configuration>
+          <images>
+            <image>
+              <name>localstack/localstack</name>
+              <run>
+                <env>
+                  <SERVICES>s3</SERVICES>
+                </env>
+                <ports>
+                  <port>${localstack.edge.port}:${localstack.edge.port}</port>
+                </ports>
+                <wait>
+                  <log>^Ready\.$</log>
+                  <time>30000</time>
+                </wait>
+              </run>
+            </image>
+          </images>
+        </configuration>
+        <executions>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>build</goal>
+              <goal>start</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>stop</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop</goal>
             </goals>
           </execution>
         </executions>
@@ -386,32 +442,6 @@
                 <jvmArg>-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory</jvmArg>
                 <jvmArg>-Dvertx-config-path=target/test-classes/test-config.properties</jvmArg>
               </jvmArgs>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <!-- A profile for setting AWS environment variables for Maven Surefire when we're not running the build on GitHub Actions -->
-    <profile>
-      <id>surefire-config-aws-environment-variables</id>
-      <activation>
-        <property>
-          <name>!ghActions</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <environmentVariables>
-                <AUDIOWAVEFORM_S3_BUCKET>${avpt.s3.bucket}</AUDIOWAVEFORM_S3_BUCKET>
-                <AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE>${avpt.s3.object.url.template}</AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE>
-                <AWS_ACCESS_KEY_ID>${avpt.s3.access_key}</AWS_ACCESS_KEY_ID>
-                <AWS_DEFAULT_REGION>${avpt.s3.region}</AWS_DEFAULT_REGION>
-                <AWS_SECRET_ACCESS_KEY>${avpt.s3.secret_key}</AWS_SECRET_ACCESS_KEY>
-              </environmentVariables>
             </configuration>
           </plugin>
         </plugins>
