@@ -12,10 +12,8 @@ import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 
@@ -24,7 +22,6 @@ import software.amazon.awssdk.profiles.ProfileProperty;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder;
 
@@ -152,22 +149,20 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
     }
 
     /**
-     * Creates a S3 bucket using the name passed to the constructor.
+     * Gets the consumer's S3 client.
      *
-     * @return A Future that will be completed when the bucket creation is complete
+     * @return The S3 client
      */
-    public Future<Void> createBucket() {
-        final Promise<Void> promise = Promise.promise();
-        final CreateBucketRequest request = CreateBucketRequest.builder().bucket(myS3BucketName).build();
+    public S3AsyncClient getS3Client() {
+        return myS3Client;
+    }
 
-        myS3Client.createBucket(request).whenComplete((resp, err) -> {
-            if (resp != null) {
-                promise.complete();
-            } else {
-                promise.fail(err);
-            }
-        });
-
-        return promise.future();
+    /**
+     * Gets the consumer's S3 bucket name.
+     *
+     * @return The S3 bucket name.
+     */
+    public String getS3BucketName() {
+        return myS3BucketName;
     }
 }

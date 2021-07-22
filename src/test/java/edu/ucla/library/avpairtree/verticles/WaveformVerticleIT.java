@@ -28,6 +28,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -37,6 +38,8 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.client.WebClient;
+
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
 /**
  * Tests the waveform verticle.
@@ -71,15 +74,26 @@ public class WaveformVerticleIT {
             final AmazonS3WaveformConsumer localstack = new AmazonS3WaveformConsumer(config);
             final MessageConsumer<byte[]> waveformConsumer =
                     myContext.vertx().eventBus().consumer(WAVEFORM_CONSUMER, localstack);
+            final Promise<Void> s3BucketCreate = Promise.promise();
+            final CreateBucketRequest request =
+                    CreateBucketRequest.builder().bucket(localstack.getS3BucketName()).build();
 
             aContext.<AmazonS3WaveformConsumer>put(WAVEFORM_CONSUMER, localstack);
             aContext.<MessageConsumer<byte[]>>put(CONSUMER_MOCK, waveformConsumer);
 
             myContext.vertx().eventBus().registerDefaultCodec(CsvItem.class, new CsvItemCodec());
 
-            // Return a chained Future that resolves with the WaveformVerticle's deployment id
             // Note that the S3 bucket will be cleaned up and deleted when the Localstack container is destroyed
-            return localstack.createBucket().compose(create -> {
+            localstack.getS3Client().createBucket(request).whenComplete((resp, err) -> {
+                if (resp != null) {
+                    s3BucketCreate.complete();
+                } else {
+                    s3BucketCreate.fail(err);
+                }
+            });
+
+            // Return a chained Future that resolves with the WaveformVerticle's deployment id
+            return s3BucketCreate.future().compose(create -> {
                 return myContext.vertx().deployVerticle(WaveformVerticle.class, options);
             });
         }).onSuccess(deploymentID -> {
