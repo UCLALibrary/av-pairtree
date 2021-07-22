@@ -52,7 +52,6 @@
 
     <!-- Testing properties -->
     <live.test.reloads>false</live.test.reloads>
-    <localstack.edge.port>4566</localstack.edge.port>
   </properties>
 
   <dependencyManagement>
@@ -261,7 +260,7 @@
           <environmentVariables>
             <AUDIOWAVEFORM_S3_BUCKET>test-audiowaveform-resources</AUDIOWAVEFORM_S3_BUCKET>
             <AWS_ACCESS_KEY_ID>test</AWS_ACCESS_KEY_ID><!-- access key and secret key must be set (to anything) -->
-            <AWS_ENDPOINT_URL>http://localhost:${localstack.edge.port}</AWS_ENDPOINT_URL>
+            <AWS_ENDPOINT_URL>http://localhost:${http.test.port}</AWS_ENDPOINT_URL>
             <AWS_DEFAULT_REGION>us-east-1</AWS_DEFAULT_REGION>
             <AWS_SECRET_ACCESS_KEY>test</AWS_SECRET_ACCESS_KEY>
           </environmentVariables>
@@ -279,7 +278,7 @@
           <environmentVariables>
             <AUDIOWAVEFORM_S3_BUCKET>test-audiowaveform-resources</AUDIOWAVEFORM_S3_BUCKET>
             <AWS_ACCESS_KEY_ID>test</AWS_ACCESS_KEY_ID>
-            <AWS_ENDPOINT_URL>http://localhost:${localstack.edge.port}</AWS_ENDPOINT_URL>
+            <AWS_ENDPOINT_URL>http://localhost:${http.test.port}</AWS_ENDPOINT_URL>
             <AWS_DEFAULT_REGION>us-east-1</AWS_DEFAULT_REGION>
             <AWS_SECRET_ACCESS_KEY>test</AWS_SECRET_ACCESS_KEY>
           </environmentVariables>
@@ -321,7 +320,7 @@
                   <SERVICES>s3</SERVICES>
                 </env>
                 <ports>
-                  <port>${localstack.edge.port}:${localstack.edge.port}</port>
+                  <port>${http.test.port}:4566</port>
                 </ports>
                 <wait>
                   <log>^Ready\.$</log>
