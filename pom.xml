@@ -276,8 +276,10 @@
           </systemPropertyVariables>
           <environmentVariables>
             <AUDIOWAVEFORM_S3_BUCKET>test-audiowaveform-resources</AUDIOWAVEFORM_S3_BUCKET>
+            <AWS_ACCESS_KEY_ID></AWS_ACCESS_KEY_ID>
             <AWS_ENDPOINT_URL>http://localhost:${localstack.edge.port}</AWS_ENDPOINT_URL>
             <AWS_DEFAULT_REGION>us-east-1</AWS_DEFAULT_REGION>
+            <AWS_SECRET_ACCESS_KEY></AWS_SECRET_ACCESS_KEY>
           </environmentVariables>
           <argLine>${jacoco.agent.arg}</argLine>
         </configuration>
