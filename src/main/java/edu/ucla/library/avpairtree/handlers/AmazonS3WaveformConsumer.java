@@ -3,8 +3,6 @@ package edu.ucla.library.avpairtree.handlers;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
@@ -27,11 +25,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.Delete;
-import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder;
 
@@ -177,63 +170,4 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
 
         return promise.future();
     }
-
-    /**
-     * Deletes all the objects in the S3 bucket whose name was passed to the constructor. This assumes that there are
-     * not more than 1000 objects in the bucket.
-     *
-     * @return A Future that will be completed when the object deletions are complete
-     */
-    public Future<Void> clearBucket() {
-        final Promise<Void> promise = Promise.promise();
-        final ListObjectsV2Request listRequest = ListObjectsV2Request.builder().bucket(myS3BucketName).build();
-
-        myS3Client.listObjectsV2(listRequest).whenComplete((resp, err) -> {
-            if (resp != null) {
-                if (!resp.isTruncated()) {
-                    final Collection<ObjectIdentifier> s3ObjectIds = resp.contents().parallelStream().map(s3Object -> {
-                        return ObjectIdentifier.builder().key(s3Object.key()).build();
-                    }).collect(Collectors.toList());
-                    final DeleteObjectsRequest deleteRequest = DeleteObjectsRequest.builder().bucket(myS3BucketName)
-                            .delete(Delete.builder().objects(s3ObjectIds).build()).build();
-
-                    myS3Client.deleteObjects(deleteRequest).whenComplete((resp2, err2) -> {
-                        if (resp2 != null) {
-                            promise.complete();
-                        } else {
-                            promise.fail(err2);
-                        }
-                    });
-                } else {
-                    // Assume that we're not using more than 1000 objects for testing
-                    promise.fail("Clearing S3 buckets with more than 1000 objects is not yet implemented");
-                }
-            } else {
-                promise.fail(err);
-            }
-        });
-
-        return promise.future();
-    }
-
-    /**
-     * Deletes the S3 bucket whose name was passed to the constructor.
-     *
-     * @return A Future that will be completed when the bucket deletion is complete
-     */
-    public Future<Void> deleteBucket() {
-        final Promise<Void> promise = Promise.promise();
-        final DeleteBucketRequest request = DeleteBucketRequest.builder().bucket(myS3BucketName).build();
-
-        myS3Client.deleteBucket(request).whenComplete((resp, err) -> {
-            if (resp != null) {
-                promise.complete();
-            } else {
-                promise.fail(err);
-            }
-        });
-
-        return promise.future();
-    }
-
 }

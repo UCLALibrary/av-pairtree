@@ -78,6 +78,7 @@ public class WaveformVerticleIT {
             myContext.vertx().eventBus().registerDefaultCodec(CsvItem.class, new CsvItemCodec());
 
             // Return a chained Future that resolves with the WaveformVerticle's deployment id
+            // Note that the S3 bucket will be cleaned up and deleted when the Localstack container is destroyed
             return localstack.createBucket().compose(create -> {
                 return myContext.vertx().deployVerticle(WaveformVerticle.class, options);
             });
@@ -95,21 +96,14 @@ public class WaveformVerticleIT {
      */
     @After
     public void tearDown(final TestContext aContext) {
-        final Handler<AsyncResult<Void>> asyncTaskHandler = aContext.asyncAssertSuccess();
+        final Handler<AsyncResult<CompositeFuture>> asyncTaskHandler = aContext.asyncAssertSuccess();
         @SuppressWarnings("rawtypes")
         final List<Future> undeploys = new ArrayList<>();
 
         undeploys.add(aContext.<MessageConsumer<byte[]>>get(CONSUMER_MOCK).unregister());
         undeploys.add(myContext.vertx().undeploy(aContext.get(DEPLOYMENT_ID)));
 
-        CompositeFuture.all(undeploys).compose(undeploy -> {
-            final AmazonS3WaveformConsumer localstack = aContext.<AmazonS3WaveformConsumer>get(WAVEFORM_CONSUMER);
-
-            // Clear the S3 bucket and then delete it
-            return localstack.clearBucket().compose(clear -> {
-                return localstack.deleteBucket();
-            });
-        }).onComplete(asyncTaskHandler);
+        CompositeFuture.all(undeploys).onComplete(asyncTaskHandler);
     }
 
     /**
