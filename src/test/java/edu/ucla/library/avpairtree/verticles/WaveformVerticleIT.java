@@ -20,7 +20,7 @@ import info.freelibrary.util.LoggerFactory;
 import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.CsvItemCodec;
 import edu.ucla.library.avpairtree.MessageCodes;
-import edu.ucla.library.avpairtree.handlers.LocalstackS3WaveformConsumer;
+import edu.ucla.library.avpairtree.handlers.AmazonS3WaveformConsumer;
 
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AsyncResult;
@@ -68,11 +68,11 @@ public class WaveformVerticleIT {
 
         ConfigRetriever.create(myContext.vertx()).getConfig().compose(config -> {
             final DeploymentOptions options = new DeploymentOptions().setConfig(config);
-            final LocalstackS3WaveformConsumer localstack = new LocalstackS3WaveformConsumer(config);
+            final AmazonS3WaveformConsumer localstack = new AmazonS3WaveformConsumer(config);
             final MessageConsumer<byte[]> waveformConsumer =
                     myContext.vertx().eventBus().consumer(WAVEFORM_CONSUMER, localstack);
 
-            aContext.<LocalstackS3WaveformConsumer>put(WAVEFORM_CONSUMER, localstack);
+            aContext.<AmazonS3WaveformConsumer>put(WAVEFORM_CONSUMER, localstack);
             aContext.<MessageConsumer<byte[]>>put(CONSUMER_MOCK, waveformConsumer);
 
             myContext.vertx().eventBus().registerDefaultCodec(CsvItem.class, new CsvItemCodec());
@@ -103,8 +103,7 @@ public class WaveformVerticleIT {
         undeploys.add(myContext.vertx().undeploy(aContext.get(DEPLOYMENT_ID)));
 
         CompositeFuture.all(undeploys).compose(undeploy -> {
-            final LocalstackS3WaveformConsumer localstack =
-                    aContext.<LocalstackS3WaveformConsumer>get(WAVEFORM_CONSUMER);
+            final AmazonS3WaveformConsumer localstack = aContext.<AmazonS3WaveformConsumer>get(WAVEFORM_CONSUMER);
 
             // Clear the S3 bucket and then delete it
             return localstack.clearBucket().compose(clear -> {

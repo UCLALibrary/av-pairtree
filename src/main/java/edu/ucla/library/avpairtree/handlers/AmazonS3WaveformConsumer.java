@@ -1,7 +1,10 @@
 package edu.ucla.library.avpairtree.handlers;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
@@ -11,8 +14,10 @@ import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 
@@ -20,6 +25,13 @@ import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.profiles.ProfileProperty;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.Delete;
+import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder;
 
@@ -40,11 +52,9 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
      */
     private static final String CONTENT_ENCODING = "contentEncoding";
 
-    private final String myAwsDefaultRegion;
-
-    private final String myS3Bucket;
-
     private final String myS3ObjectUrlTemplate;
+
+    private final String myS3BucketName;
 
     private final S3AsyncClient myS3Client;
 
@@ -56,12 +66,13 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
      */
     public AmazonS3WaveformConsumer(final JsonObject aConfig) throws IllegalStateException {
         final String configErrorMsg;
+        final S3AsyncClientBuilder s3ClientBuilder = S3AsyncClient.builder();
 
-        myAwsDefaultRegion = aConfig.getString("AWS_DEFAULT_REGION");
-        myS3Bucket = aConfig.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
-        myS3ObjectUrlTemplate = aConfig.getString(Config.AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE);
+        final String awsDefaultRegion = aConfig.getString("AWS_DEFAULT_REGION");
+        final String s3BucketName = aConfig.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
+        final String s3EndpointURL = aConfig.getString(Config.AWS_ENDPOINT_URL);
 
-        if (myAwsDefaultRegion == null) {
+        if (awsDefaultRegion == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_018);
 
             LOGGER.error(configErrorMsg);
@@ -72,19 +83,32 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
 
             LOGGER.error(configErrorMsg);
             throw new IllegalStateException(configErrorMsg);
-        } else if (myS3Bucket == null) {
+        } else if (s3BucketName == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_020);
-
-            LOGGER.error(configErrorMsg);
-            throw new IllegalStateException(configErrorMsg);
-        } else if (myS3ObjectUrlTemplate == null) {
-            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_021);
 
             LOGGER.error(configErrorMsg);
             throw new IllegalStateException(configErrorMsg);
         }
 
-        myS3Client = S3AsyncClient.builder().region(Region.of(myAwsDefaultRegion)).build();
+        if (s3EndpointURL != null) {
+            // LocalStack
+            s3ClientBuilder.endpointOverride(URI.create(s3EndpointURL));
+
+            myS3ObjectUrlTemplate = s3EndpointURL + "/" + s3BucketName + "/{}";
+        } else {
+            final String s3ObjectUrlTemplate = aConfig.getString(Config.AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE);
+
+            if (s3ObjectUrlTemplate == null) {
+                configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_021);
+
+                LOGGER.error(configErrorMsg);
+                throw new IllegalStateException(configErrorMsg);
+            }
+            myS3ObjectUrlTemplate = s3ObjectUrlTemplate;
+        }
+
+        myS3BucketName = s3BucketName;
+        myS3Client = s3ClientBuilder.region(Region.of(awsDefaultRegion)).build();
     }
 
     /**
@@ -97,7 +121,7 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
     @Override
     public void handle(final Message<byte[]> aMessage) throws IllegalArgumentException {
         final MultiMap headers = aMessage.headers();
-        final Builder putRequestBuilder = PutObjectRequest.builder().bucket(myS3Bucket);
+        final Builder putRequestBuilder = PutObjectRequest.builder().bucket(myS3BucketName);
         final PutObjectRequest putRequest;
         final String s3ObjectKey;
 
@@ -133,4 +157,83 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
             }
         });
     }
+
+    /**
+     * Creates a S3 bucket using the name passed to the constructor.
+     *
+     * @return A Future that will be completed when the bucket creation is complete
+     */
+    public Future<Void> createBucket() {
+        final Promise<Void> promise = Promise.promise();
+        final CreateBucketRequest request = CreateBucketRequest.builder().bucket(myS3BucketName).build();
+
+        myS3Client.createBucket(request).whenComplete((resp, err) -> {
+            if (resp != null) {
+                promise.complete();
+            } else {
+                promise.fail(err);
+            }
+        });
+
+        return promise.future();
+    }
+
+    /**
+     * Deletes all the objects in the S3 bucket whose name was passed to the constructor. This assumes that there are
+     * not more than 1000 objects in the bucket.
+     *
+     * @return A Future that will be completed when the object deletions are complete
+     */
+    public Future<Void> clearBucket() {
+        final Promise<Void> promise = Promise.promise();
+        final ListObjectsV2Request listRequest = ListObjectsV2Request.builder().bucket(myS3BucketName).build();
+
+        myS3Client.listObjectsV2(listRequest).whenComplete((resp, err) -> {
+            if (resp != null) {
+                if (!resp.isTruncated()) {
+                    final Collection<ObjectIdentifier> s3ObjectIds = resp.contents().parallelStream().map(s3Object -> {
+                        return ObjectIdentifier.builder().key(s3Object.key()).build();
+                    }).collect(Collectors.toList());
+                    final DeleteObjectsRequest deleteRequest = DeleteObjectsRequest.builder().bucket(myS3BucketName)
+                            .delete(Delete.builder().objects(s3ObjectIds).build()).build();
+
+                    myS3Client.deleteObjects(deleteRequest).whenComplete((resp2, err2) -> {
+                        if (resp2 != null) {
+                            promise.complete();
+                        } else {
+                            promise.fail(err2);
+                        }
+                    });
+                } else {
+                    // Assume that we're not using more than 1000 objects for testing
+                    promise.fail("Clearing S3 buckets with more than 1000 objects is not yet implemented");
+                }
+            } else {
+                promise.fail(err);
+            }
+        });
+
+        return promise.future();
+    }
+
+    /**
+     * Deletes the S3 bucket whose name was passed to the constructor.
+     *
+     * @return A Future that will be completed when the bucket deletion is complete
+     */
+    public Future<Void> deleteBucket() {
+        final Promise<Void> promise = Promise.promise();
+        final DeleteBucketRequest request = DeleteBucketRequest.builder().bucket(myS3BucketName).build();
+
+        myS3Client.deleteBucket(request).whenComplete((resp, err) -> {
+            if (resp != null) {
+                promise.complete();
+            } else {
+                promise.fail(err);
+            }
+        });
+
+        return promise.future();
+    }
+
 }
