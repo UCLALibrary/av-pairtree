@@ -261,6 +261,7 @@
           <environmentVariables>
             <AUDIOWAVEFORM_S3_BUCKET>test-audiowaveform-resources</AUDIOWAVEFORM_S3_BUCKET>
             <AWS_ENDPOINT_URL>http://localhost:${localstack.edge.port}</AWS_ENDPOINT_URL>
+            <AWS_DEFAULT_REGION>us-east-1</AWS_DEFAULT_REGION>
           </environmentVariables>
           <forkCount>1</forkCount>
           <argLine>${jacoco.agent.arg}</argLine>
@@ -276,6 +277,7 @@
           <environmentVariables>
             <AUDIOWAVEFORM_S3_BUCKET>test-audiowaveform-resources</AUDIOWAVEFORM_S3_BUCKET>
             <AWS_ENDPOINT_URL>http://localhost:${localstack.edge.port}</AWS_ENDPOINT_URL>
+            <AWS_DEFAULT_REGION>us-east-1</AWS_DEFAULT_REGION>
           </environmentVariables>
           <argLine>${jacoco.agent.arg}</argLine>
         </configuration>

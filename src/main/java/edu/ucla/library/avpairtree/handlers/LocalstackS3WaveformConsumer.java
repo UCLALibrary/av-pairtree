@@ -21,6 +21,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.Delete;
@@ -64,10 +65,16 @@ public class LocalstackS3WaveformConsumer implements Handler<Message<byte[]>> {
      */
     public LocalstackS3WaveformConsumer(final JsonObject aConfig) throws IllegalStateException {
         final String configErrorMsg;
+        final String awsDefaultRegion = aConfig.getString("AWS_DEFAULT_REGION");
         final String s3BucketName = aConfig.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
         final String s3EndpointURL = aConfig.getString(Config.AWS_ENDPOINT_URL);
 
-        if (s3BucketName == null) {
+        if (awsDefaultRegion == null) {
+            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_018);
+
+            LOGGER.error(configErrorMsg);
+            throw new IllegalStateException(configErrorMsg);
+        } else if (s3BucketName == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_020);
 
             LOGGER.error(configErrorMsg);
@@ -81,7 +88,8 @@ public class LocalstackS3WaveformConsumer implements Handler<Message<byte[]>> {
 
         myS3BucketName = s3BucketName;
         myS3ObjectUrlTemplate = s3EndpointURL + "/" + s3BucketName + "/{}";
-        myS3Client = S3AsyncClient.builder().endpointOverride(URI.create(s3EndpointURL)).build();
+        myS3Client = S3AsyncClient.builder().endpointOverride(URI.create(s3EndpointURL))
+                .region(Region.of(awsDefaultRegion)).build();
     }
 
     /**
