@@ -324,7 +324,7 @@
                 </ports>
                 <wait>
                   <log>^Ready\.$</log>
-                  <time>30000</time>
+                  <time>60000</time>
                 </wait>
               </run>
             </image>
