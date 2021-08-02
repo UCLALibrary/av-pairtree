@@ -59,4 +59,3 @@ jobs:
           maven_args: >
             -V -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error
             -Dsurefire.skipAfterFailureCount=1 -Dfailsafe.skipAfterFailureCount=1
-            -DghActions

@@ -1,6 +1,8 @@
 
 package edu.ucla.library.avpairtree.verticles;
 
+import static edu.ucla.library.avpairtree.AvPtConstants.WAVEFORM_CONSUMER;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import edu.ucla.library.avpairtree.CsvItemCodec;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
 import edu.ucla.library.avpairtree.handlers.StatusHandler;
+import edu.ucla.library.avpairtree.handlers.AmazonS3WaveformConsumer;
 
 import io.methvin.watcher.DirectoryWatcher;
 
@@ -135,17 +138,25 @@ public class MainVerticle extends AbstractVerticle {
                     futures.add(deployVerticle(new WaveformVerticle(), aConfig.copy().put(WORKER, true)));
 
                     CompositeFuture.all(futures).onSuccess(result -> {
-                        startCsvDirWatcher(aConfig).onComplete(startup -> {
-                            // Register the codec for passing CsvItem(s) over the event bus
-                            vertx.eventBus().registerDefaultCodec(CsvItem.class, new CsvItemCodec());
+                        try {
+                            // Configure the waveform consumer
+                            vertx.eventBus().<byte[]>consumer(WAVEFORM_CONSUMER,
+                                    new AmazonS3WaveformConsumer(aConfig)::handle);
 
-                            if (startup.succeeded()) {
-                                LOGGER.info(MessageCodes.AVPT_001, port); // Log a successful startup w/ port
-                                aPromise.complete();
-                            } else {
-                                aPromise.fail(startup.cause());
-                            }
-                        });
+                            startCsvDirWatcher(aConfig).onComplete(startup -> {
+                                // Register the codec for passing CsvItem(s) over the event bus
+                                vertx.eventBus().registerDefaultCodec(CsvItem.class, new CsvItemCodec());
+
+                                if (startup.succeeded()) {
+                                    LOGGER.info(MessageCodes.AVPT_001, port); // Log a successful startup w/ port
+                                    aPromise.complete();
+                                } else {
+                                    aPromise.fail(startup.cause());
+                                }
+                            });
+                        } catch (final IllegalStateException details) {
+                            aPromise.fail(details.getCause());
+                        }
                     }).onFailure(error -> aPromise.fail(error));
                 }).onFailure(error -> aPromise.fail(error));
             } else {

@@ -29,5 +29,7 @@
   <entry key="AVPT_021">The environment variable AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE must be set</entry>
   <entry key="AVPT_022">Unable to upload audiowaveform for item '{}' to S3: {}</entry>
   <entry key="AVPT_023">Unable to compress data: {}</entry>
+  <entry key="AVPT_024">Must provide an object key for the data</entry>
+  <entry key="AVPT_025">The environment variable AWS_ENDPOINT_URL must be set</entry>
 
 </properties>

@@ -1,9 +1,10 @@
 package edu.ucla.library.avpairtree.verticles;
 
+import static edu.ucla.library.avpairtree.AvPtConstants.WAVEFORM_CONSUMER;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.zip.GZIPOutputStream;
@@ -21,14 +22,9 @@ import edu.ucla.library.avpairtree.Op;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-
-import software.amazon.awssdk.core.async.AsyncRequestBody;
-import software.amazon.awssdk.profiles.ProfileProperty;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
  * A verticle that transforms audio files into audiowaveform data.
@@ -45,14 +41,6 @@ public final class WaveformVerticle extends AbstractVerticle {
 
     private static final String SPACE = " ";
 
-    private String myAwsDefaultRegion;
-
-    private S3AsyncClient myS3Client;
-
-    private String myS3Bucket;
-
-    private String myS3ObjectUrlTemplate;
-
     private String mySourceDir;
 
     @Override
@@ -60,12 +48,10 @@ public final class WaveformVerticle extends AbstractVerticle {
         final JsonObject config = config();
         final String[] cmd = { "which", AUDIOWAVEFORM };
         final String cmdline = String.join(SPACE, cmd);
-        final String configErrorMsg;
 
         LOGGER.debug(MessageCodes.AVPT_011, WaveformVerticle.class.getSimpleName(), Thread.currentThread().getName());
 
         // Make sure that audiowaveform is installed on the system
-
         try {
             final Process which = new ProcessBuilder(cmd).start();
             final int exitValue = which.waitFor();
@@ -96,53 +82,6 @@ public final class WaveformVerticle extends AbstractVerticle {
 
         mySourceDir = config.getString(Config.SOURCE_DIR);
 
-        // Make sure that configuration and credentials for AWS S3 have been provided
-
-        myAwsDefaultRegion = config.getString("AWS_DEFAULT_REGION");
-
-        if (myAwsDefaultRegion == null) {
-            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_018);
-
-            LOGGER.error(configErrorMsg);
-            aPromise.fail(configErrorMsg);
-
-            return;
-        }
-
-        if (config.getString(ProfileProperty.AWS_ACCESS_KEY_ID.toUpperCase()) == null ||
-                config.getString(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase()) == null) {
-            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_017);
-
-            LOGGER.error(configErrorMsg);
-            aPromise.fail(configErrorMsg);
-
-            return;
-        }
-
-        myS3Bucket = config.getString(Config.AUDIOWAVEFORM_S3_BUCKET);
-
-        if (myS3Bucket == null) {
-            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_020);
-
-            LOGGER.error(configErrorMsg);
-            aPromise.fail(configErrorMsg);
-
-            return;
-        }
-
-        myS3ObjectUrlTemplate = config.getString(Config.AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE);
-
-        if (myS3ObjectUrlTemplate == null) {
-            configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_021);
-
-            LOGGER.error(configErrorMsg);
-            aPromise.fail(configErrorMsg);
-
-            return;
-        }
-
-        myS3Client = S3AsyncClient.builder().region(Region.of(myAwsDefaultRegion)).build();
-
         vertx.eventBus().<CsvItem>consumer(getClass().getName()).handler(this::handle);
 
         aPromise.complete();
@@ -163,31 +102,20 @@ public final class WaveformVerticle extends AbstractVerticle {
             audiowaveform(audioFilePath).onSuccess(data -> {
                 final String ark = csvItem.getItemARK();
                 final String s3ObjectKey = StringUtils.format(S3_OBJECT_KEY_TEMPLATE, ark);
-                final PutObjectRequest req =
-                        PutObjectRequest.builder().bucket(myS3Bucket).key(s3ObjectKey).contentEncoding("gzip").build();
+                final DeliveryOptions options =
+                        new DeliveryOptions().addHeader("key", s3ObjectKey).addHeader("contentEncoding", "gzip");
 
                 try {
                     final byte[] compressedData = gzip(data);
-                    final AsyncRequestBody body = AsyncRequestBody.fromBytes(compressedData);
 
                     // Store the compressed audiowaveform data on S3
-                    myS3Client.putObject(req, body).whenComplete((resp, err) -> {
-                        if (resp != null) {
-                            // Success!
-                            final String audiowaveformURL = StringUtils.format(myS3ObjectUrlTemplate,
-                                    URLEncoder.encode(s3ObjectKey, StandardCharsets.UTF_8));
+                    vertx.eventBus().<String>request(WAVEFORM_CONSUMER, compressedData, options).onSuccess(result -> {
+                        // Reply with a JsonObject associating the item ARK with the URL for the audiowaveform data
+                        final String audiowaveformURL = result.body();
+                        final JsonObject response = new JsonObject().put(csvItem.getItemARK(), audiowaveformURL);
 
-                            // Reply with a JsonObject associating the item ARK with the URL for the audiowaveform data
-                            aMessage.reply(new JsonObject().put(csvItem.getItemARK(), audiowaveformURL));
-                        } else {
-                            final String s3ErrorMsg =
-                                    LOGGER.getMessage(MessageCodes.AVPT_022, s3ObjectKey, err.getMessage());
-
-                            // Since the sender (WatcherVerticle) just logs all errors, should be okay to use a single
-                            // failureCode for all errors
-                            aMessage.fail(Op.ERROR_CODE, s3ErrorMsg);
-                        }
-                    });
+                        aMessage.reply(response);
+                    }).onFailure(details -> aMessage.fail(Op.ERROR_CODE, details.getMessage()));
                 } catch (final IOException details) {
                     aMessage.fail(Op.ERROR_CODE, details.getMessage());
                 }
