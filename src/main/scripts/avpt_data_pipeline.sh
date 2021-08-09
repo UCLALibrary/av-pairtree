@@ -13,7 +13,7 @@ function change_filename_extension {
     # at .csv files
     read filename_dot_out &&
     filename_dot_csv=`sed -e "s/\.out$/.csv/" <<< ${filename_dot_out}`
-    mv ${filename_dot_out} ${filename_dot_csv}
+    mv "${filename_dot_out}" "${filename_dot_csv}"
     echo ${filename_dot_csv}
 }
 
