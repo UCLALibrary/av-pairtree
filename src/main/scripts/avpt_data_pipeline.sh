@@ -32,7 +32,7 @@ function send_slack_notification {
     # and the output CSV (stdin), and then outputs the message
     read csv_filename &&
     message="Input CSV $1 was updated successfully, and after Festerizing with $2 is now available at ${csv_filename}."
-    curl -s -X POST -H 'Content-type: application/json' --data '{"text":${message}}' ${AVPTDP_SLACK_WEBHOOK_URL}
+    curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"${message}\"}" ${AVPTDP_SLACK_WEBHOOK_URL}
     echo ${message}
 }
 
