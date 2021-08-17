@@ -30,8 +30,13 @@ function festerize_ {
 function send_slack_notification {
     # Posts a notification to a Slack channel with a message about the input CSV ($1), the ingest Fester base URL ($2),
     # and the output CSV (stdin), and then outputs the message
-    read csv_filename &&
-    message="Input CSV $1 was updated successfully, and after Festerizing with $2 is now available at ${csv_filename}."
+    read csv_filename
+    if [[ -n $csv_filename ]]
+    then
+        message="Input CSV $1 was updated successfully, and after Festerizing with $2 is now available at ${csv_filename}."
+    else
+        message="Input CSV $1 could not be processed. See server logs for details."
+    fi
     curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"${message}\"}" ${AVPTDP_SLACK_WEBHOOK_URL}
     echo ${message}
 }
