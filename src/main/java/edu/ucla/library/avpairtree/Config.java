@@ -95,6 +95,7 @@ public final class Config {
     /**
      * The environment variable for the S3 object URL template for audio waveforms.
      */
+    @SuppressWarnings("PMD.LongVariable")
     public static final String AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE = "AUDIOWAVEFORM_S3_OBJECT_URL_TEMPLATE";
 
     /**

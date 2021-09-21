@@ -1,8 +1,10 @@
+
 package edu.ucla.library.avpairtree.handlers;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 import info.freelibrary.util.Logger;
 import info.freelibrary.util.LoggerFactory;
@@ -16,7 +18,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.profiles.ProfileProperty;
 import software.amazon.awssdk.regions.Region;
@@ -30,6 +31,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder;
  */
 public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
 
+    /**
+     * Logger for the consumer.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AmazonS3WaveformConsumer.class, MessageCodes.BUNDLE);
 
     /**
@@ -42,10 +46,19 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
      */
     private static final String CONTENT_ENCODING = "contentEncoding";
 
+    /**
+     * The S3 object URL template.
+     */
     private final String myS3ObjectUrlTemplate;
 
+    /**
+     * The S3 bucket name.
+     */
     private final String myS3BucketName;
 
+    /**
+     * The S3 client.
+     */
     private final S3AsyncClient myS3Client;
 
     /**
@@ -54,7 +67,8 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
      * @param aConfig A JSON configuration
      * @throws IllegalStateException If any required Amazon S3 credentials or configuration info is missing
      */
-    public AmazonS3WaveformConsumer(final JsonObject aConfig) throws IllegalStateException {
+    @SuppressWarnings("PMD.CyclomaticComplexity")
+    public AmazonS3WaveformConsumer(final JsonObject aConfig) {
         final String configErrorMsg;
         final S3AsyncClientBuilder s3ClientBuilder = S3AsyncClient.builder();
 
@@ -67,8 +81,8 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
 
             LOGGER.error(configErrorMsg);
             throw new IllegalStateException(configErrorMsg);
-        } else if (aConfig.getString(ProfileProperty.AWS_ACCESS_KEY_ID.toUpperCase()) == null ||
-                aConfig.getString(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase()) == null) {
+        } else if (aConfig.getString(ProfileProperty.AWS_ACCESS_KEY_ID.toUpperCase(Locale.US)) == null ||
+                aConfig.getString(ProfileProperty.AWS_SECRET_ACCESS_KEY.toUpperCase(Locale.US)) == null) {
             configErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_017);
 
             LOGGER.error(configErrorMsg);
@@ -94,8 +108,11 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
                 LOGGER.error(configErrorMsg);
                 throw new IllegalStateException(configErrorMsg);
             }
+
             myS3ObjectUrlTemplate = s3ObjectUrlTemplate;
         }
+
+        LOGGER.debug(MessageCodes.AVPT_026, s3BucketName, awsDefaultRegion);
 
         myS3BucketName = s3BucketName;
         myS3Client = s3ClientBuilder.region(Region.of(awsDefaultRegion)).build();
@@ -109,7 +126,7 @@ public class AmazonS3WaveformConsumer implements Handler<Message<byte[]>> {
      * @throws IllegalArgumentException If an object key was not supplied in the message headers
      */
     @Override
-    public void handle(final Message<byte[]> aMessage) throws IllegalArgumentException {
+    public void handle(final Message<byte[]> aMessage) {
         final MultiMap headers = aMessage.headers();
         final Builder putRequestBuilder = PutObjectRequest.builder().bucket(myS3BucketName);
         final PutObjectRequest putRequest;
