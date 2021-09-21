@@ -138,6 +138,12 @@
       <groupId>info.freelibrary</groupId>
       <artifactId>vertx-pairtree</artifactId>
       <version>${pairtree.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>info.freelibrary</groupId>
+          <artifactId>freelib-utils</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>ws.schild</groupId>
@@ -239,10 +245,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>info.freelibrary</groupId>
-        <artifactId>freelib-maven-plugins</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-pmd-plugin</artifactId>
@@ -367,6 +369,10 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>info.freelibrary</groupId>
+        <artifactId>freelib-maven-plugins</artifactId>
       </plugin>
       <plugin>
         <groupId>net.revelc.code.formatter</groupId>
