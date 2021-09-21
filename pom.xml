@@ -267,6 +267,10 @@
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
       <plugin>
+        <groupId>info.freelibrary</groupId>
+        <artifactId>freelib-maven-plugins</artifactId>
+      </plugin>
+      <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
       <plugin>
@@ -371,8 +375,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>info.freelibrary</groupId>
-        <artifactId>freelib-maven-plugins</artifactId>
+        <artifactId>maven-resources-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>net.revelc.code.formatter</groupId>
