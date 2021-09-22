@@ -30,7 +30,7 @@
 
   <properties>
     <jave.version>3.0.1</jave.version>
-    <vertx.version>4.2.0.Beta1</vertx.version>
+    <vertx.version>4.1.4</vertx.version>
     <csveed.version>0.7.1</csveed.version>
     <pairtree.version>0.0.0</pairtree.version> <!-- pre-release version -->
     <s3.service.version>0.0.0</s3.service.version> <!-- pre-release version -->
