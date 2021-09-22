@@ -156,7 +156,7 @@ public class CsvItem {
         if (aFilePath != null) {
             myPathRoot = aFilePath.split(Constants.SLASH)[0];
         } else {
-            myPathRoot = null;
+            myPathRoot = null; // NOPMD - null assignment, code smell
         }
 
         return this;

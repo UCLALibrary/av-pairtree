@@ -31,5 +31,6 @@
   <entry key="AVPT_023">Unable to compress data: {}</entry>
   <entry key="AVPT_024">Must provide an object key for the data</entry>
   <entry key="AVPT_025">The environment variable AWS_ENDPOINT_URL must be set</entry>
+  <entry key="AVPT_026">Configuring S3 bucket: {} [region: {}]</entry>
 
 </properties>

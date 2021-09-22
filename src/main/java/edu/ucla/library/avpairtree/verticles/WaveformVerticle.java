@@ -1,6 +1,8 @@
+
 package edu.ucla.library.avpairtree.verticles;
 
 import static edu.ucla.library.avpairtree.AvPtConstants.WAVEFORM_CONSUMER;
+import static info.freelibrary.util.Constants.SPACE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,16 +33,24 @@ import io.vertx.core.json.JsonObject;
  */
 public final class WaveformVerticle extends AbstractVerticle {
 
+    /**
+     * The waveform verticle's logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(WaveformVerticle.class, MessageCodes.BUNDLE);
 
-    // The name of the audiowaveform executable.
+    /**
+     * The name of the audiowaveform executable.
+     */
     private static final String AUDIOWAVEFORM = "audiowaveform";
 
-    // The template string for AWS S3 object keys. The slot is: item ARK.
+    /**
+     * The template string for AWS S3 object keys. The slot is: item ARK.
+     */
     private static final String S3_OBJECT_KEY_TEMPLATE = "{}/audiowaveform.dat";
 
-    private static final String SPACE = " ";
-
+    /**
+     * The waveform source directory
+     */
     private String mySourceDir;
 
     @Override
@@ -55,13 +65,13 @@ public final class WaveformVerticle extends AbstractVerticle {
         try {
             final Process which = new ProcessBuilder(cmd).start();
             final int exitValue = which.waitFor();
-            final InputStream stdout;
             final String cmdResult;
 
-            stdout = which.getInputStream();
-            cmdResult =
-                    LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, new String(stdout.readAllBytes()));
-            stdout.close();
+            try (InputStream inStream = which.getInputStream()) {
+                final String input = new String(inStream.readAllBytes());
+
+                cmdResult = LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, input);
+            }
 
             if (0 == exitValue) {
                 LOGGER.debug(cmdResult);
@@ -99,7 +109,7 @@ public final class WaveformVerticle extends AbstractVerticle {
             final CsvItem csvItem = aMessage.body();
             final Path audioFilePath = AvPtUtils.getInputFilePath(csvItem, mySourceDir);
 
-            audiowaveform(audioFilePath).onSuccess(data -> {
+            getAudiowaveform(audioFilePath).onSuccess(data -> {
                 final String ark = csvItem.getItemARK();
                 final String s3ObjectKey = StringUtils.format(S3_OBJECT_KEY_TEMPLATE, ark);
                 final DeliveryOptions options =
@@ -134,7 +144,7 @@ public final class WaveformVerticle extends AbstractVerticle {
      * @return A Future that is completed with a byte array containing the audiowaveform data
      * @throws IOException if an I/O error occurs during the execution of the audiowaveform program
      */
-    private Future<byte[]> audiowaveform(final Path anAudioFilePath) throws IOException {
+    private Future<byte[]> getAudiowaveform(final Path anAudioFilePath) throws IOException {
         final Promise<byte[]> asyncResult = Promise.promise();
         final String[] cmd = { AUDIOWAVEFORM, "--input-filename", anAudioFilePath.toString(), "--output-format", "dat",
             "--bits", "8" };
@@ -163,7 +173,7 @@ public final class WaveformVerticle extends AbstractVerticle {
                     asyncResult.fail(LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, stderr));
                 }
             });
-        } catch (final IOException details) {
+        } catch (final IOException details) { // NOPMD - PMD doesn't like wrapped exceptions with same type
             throw new IOException(LOGGER.getMessage(MessageCodes.AVPT_016, cmdline, details));
         }
 
@@ -185,7 +195,7 @@ public final class WaveformVerticle extends AbstractVerticle {
             gz.finish();
 
             return outputStream.toByteArray();
-        } catch (final IOException details) {
+        } catch (final IOException details) { // NOPMD - PMD doesn't like wrapped exceptions with same type
             throw new IOException(LOGGER.getMessage(MessageCodes.AVPT_023, details));
         }
     }

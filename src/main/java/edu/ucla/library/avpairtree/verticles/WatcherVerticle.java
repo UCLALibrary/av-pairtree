@@ -1,10 +1,11 @@
 
-package edu.ucla.library.avpairtree.verticles;
+package edu.ucla.library.avpairtree.verticles; // NOPMD - excessive imports
 
-import java.io.File;
-import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,14 @@ import io.vertx.core.json.JsonObject;
  */
 public class WatcherVerticle extends AbstractVerticle {
 
+    /**
+     * The watcher verticle's logger.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(WatcherVerticle.class, MessageCodes.BUNDLE);
 
+    /**
+     * A substitution pattern used in metadata.
+     */
     private static final String SUBSTITUTION_PATTERN = "{}";
 
     @Override
@@ -84,21 +91,18 @@ public class WatcherVerticle extends AbstractVerticle {
 
                     // Filter the audiowaveform URLs out of the results and combine them all into a single JsonObject,
                     // which we'll use as a lookup table when updating the CSV with audiowaveform URLs
-                    final JsonObject waveformUriMap = results.stream()
-                            .filter(result -> result.body().getClass().equals(JsonObject.class))
-                            .map(msg -> (JsonObject) msg.body())
-                            .reduce(new JsonObject(), (jsonObject1, jsonObject2) -> jsonObject1.mergeIn(jsonObject2));
+                    final JsonObject waveformUriMap =
+                            results.stream().filter(result -> result.body().getClass().equals(JsonObject.class))
+                                    .map(msg -> (JsonObject) msg.body()).reduce(new JsonObject(), JsonObject::mergeIn);
 
                     // Map ARKs to their corresponding CsvItem
                     final Map<String, CsvItem> csvItemMap = results.stream()
-                            .filter(result -> result.body().getClass().equals(CsvItem.class))
-                            .map(msg -> {
+                            .filter(result -> result.body().getClass().equals(CsvItem.class)).map(msg -> {
                                 final CsvItem item = (CsvItem) msg.body();
 
                                 LOGGER.info(MessageCodes.AVPT_009, item.getItemARK());
                                 return item;
-                            })
-                            .collect(Collectors.toMap(item -> item.getItemARK(), item -> item));
+                            }).collect(Collectors.toMap(CsvItem::getItemARK, item -> item));
 
                     updateCSV(message.body(), csvItemMap, waveformUriMap).onSuccess(csvFilePath -> {
                         LOGGER.info(MessageCodes.AVPT_006, csvFilePath);
@@ -122,6 +126,7 @@ public class WatcherVerticle extends AbstractVerticle {
      * @param aWaveformMap A map of ARKs to audiowaveform URLs for the items that have been processed
      * @return The path of the new CSV file
      */
+    @SuppressWarnings("PMD.ExcessiveMethodLength")
     private Future<String> updateCSV(final String aCsvFilePath, final Map<String, CsvItem> aCsvItemMap,
             final JsonObject aWaveformMap) {
         final String newCsvPath = FileUtils.stripExt(aCsvFilePath) + ".out"; // Would be re-watched if ext was .csv
@@ -133,7 +138,7 @@ public class WatcherVerticle extends AbstractVerticle {
             final CsvClient<CsvItem> reader = new CsvClientImpl<>(csvReader, CsvItem.class);
 
             // Open the CSV file we'll be writing the updated information to
-            try (FileWriter csvWriter = new FileWriter(new File(newCsvPath))) {
+            try (BufferedWriter csvWriter = Files.newBufferedWriter(Paths.get(newCsvPath))) {
                 final CsvClient<?> writer = new CsvClientImpl<>(csvWriter);
                 final Header originalHeader = reader.readHeader();
 
@@ -172,6 +177,7 @@ public class WatcherVerticle extends AbstractVerticle {
                         accessUrlIndex = rowSize - 2;
                         waveformIndex = rowSize - 1;
                     }
+
                     headerRow = new String[rowSize];
 
                     for (int index = 0; index < rowSize; index++) {
@@ -219,7 +225,7 @@ public class WatcherVerticle extends AbstractVerticle {
 
                 csvWriter.close();
                 promise.complete(newCsvPath);
-            } catch (final Exception details) {
+            } catch (final Exception details) { // NOPMD - avoid catching generic exceptions
                 promise.fail(details);
             }
         });
@@ -263,8 +269,7 @@ public class WatcherVerticle extends AbstractVerticle {
      * @throws IndexOutOfBoundsException If a supplied ID index position isn't valid
      * @throws UnsupportedOperationException If the access URL pattern doesn't contain any placeholders
      */
-    private String constructAccessURL(final CsvItem aCsvItem)
-            throws IndexOutOfBoundsException, UnsupportedOperationException {
+    private String constructAccessURL(final CsvItem aCsvItem) {
         final String arkPrefix = config().getString(Config.PAIRTREE_PREFIX);
         final String ark = aCsvItem.getItemARK();
         final String pathARK = ark.replace(arkPrefix, Constants.EMPTY); // Strip ARK prefix
@@ -292,8 +297,8 @@ public class WatcherVerticle extends AbstractVerticle {
      * @throws IndexOutOfBoundsException If a supplied ID index position isn't valid
      * @throws UnsupportedOperationException If the access URL pattern doesn't contain any placeholders
      */
-    private String addIdPath(final String aAccessUrlPattern, final int aUrlPatternIdIndex, final String aIdPath)
-            throws IndexOutOfBoundsException, UnsupportedOperationException {
+    @SuppressWarnings({ "PMD.CyclomaticComplexity", "PMD.AvoidLiteralsInIfCondition" })
+    private String addIdPath(final String aAccessUrlPattern, final int aUrlPatternIdIndex, final String aIdPath) {
         final int substitutionCount = countSubstitutionPatterns(aAccessUrlPattern);
 
         // We allow up to three path substitutions, with the Pairtree path being able to be swapped into any of them

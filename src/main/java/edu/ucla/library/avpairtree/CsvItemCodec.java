@@ -20,6 +20,7 @@ public class CsvItemCodec implements MessageCodec<CsvItem, CsvItem> {
     }
 
     @Override
+    @SuppressWarnings("PMD.UnusedAssignment") // Re: position
     public CsvItem decodeFromWire(final int aPosition, final Buffer aBuffer) {
         final int length = aBuffer.getInt(aPosition);
         int position = aPosition;

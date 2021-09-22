@@ -113,15 +113,14 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
 
             // Send a message with the CSV file location to the watcher verticle
             return vertx.eventBus().<CsvItem>request(WatcherVerticle.class.getName(), csvFilePath);
-        }).compose(result -> {
-            return checkOutput(csvFilePath.replace(CSV_EXT, OUT_EXT), expectedUpdates, aContext);
-        }).onComplete(check -> {
-            if (check.succeeded()) {
-                asyncTask.countDown();
-            } else {
-                aContext.fail(check.cause());
-            }
-        }).onFailure(error -> aContext.fail(error));
+        }).compose(result -> checkOutput(csvFilePath.replace(CSV_EXT, OUT_EXT), expectedUpdates, aContext))
+                .onComplete(check -> {
+                    if (check.succeeded()) {
+                        asyncTask.countDown();
+                    } else {
+                        aContext.fail(check.cause());
+                    }
+                }).onFailure(error -> aContext.fail(error));
     }
 
     /**
@@ -174,7 +173,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
     /**
      * Confirms the found item matches the expected item.
      *
-     * @param aExpectedFile An expected file
+     * @param aExpectedFilePath An expected file
      * @param aFound A found item
      * @return True if the items match; else, false
      */

@@ -29,6 +29,9 @@ import io.vertx.core.Vertx;
  */
 public class PairtreeVerticle extends AbstractVerticle {
 
+    /**
+     * Logger for the Pairtree verticle.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(PairtreeVerticle.class, MessageCodes.BUNDLE);
 
     @Override

@@ -80,7 +80,7 @@ public abstract class AbstractAvPtTest {
             options.setConfig(config.put(Config.HTTP_PORT, myPort));
 
             vertx.deployVerticle(MainVerticle.class.getName(), options).onSuccess(result -> complete(asyncTask))
-                .onFailure(error -> aContext.fail(error));
+                    .onFailure(error -> aContext.fail(error));
         }).onFailure(error -> aContext.fail(error));
     }
 

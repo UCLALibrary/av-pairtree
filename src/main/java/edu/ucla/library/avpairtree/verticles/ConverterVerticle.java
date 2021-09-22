@@ -49,7 +49,7 @@ public class ConverterVerticle extends AbstractVerticle {
     /**
      * The default bit rate of the audio codec.
      */
-    private static final int DEFAULT_BIT_RATE = 128000;
+    private static final int DEFAULT_BIT_RATE = 128_000;
 
     /**
      * The default audio channels.
@@ -59,7 +59,7 @@ public class ConverterVerticle extends AbstractVerticle {
     /**
      * The default sampling rate.
      */
-    private static final int DEFAULT_SAMPLING_RATE = 44100;
+    private static final int DEFAULT_SAMPLING_RATE = 44_100;
 
     /**
      * The default file encoding format.
@@ -114,7 +114,7 @@ public class ConverterVerticle extends AbstractVerticle {
                     LOGGER.error(error, error.getMessage());
                     message.fail(Op.ERROR_CODE, error.getMessage());
                 });
-            } catch (final Exception details) {
+            } catch (final Exception details) { // NOPMD - don't check generic exceptions
                 LOGGER.error(details, details.getMessage());
                 message.fail(Op.ERROR_CODE, details.getMessage());
             }
