@@ -54,6 +54,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Install local dependencies
+        uses: samuelmeuli/action-maven-publish@201a45a3f311b2ee888f252ba9f4194257545709 # v1.4.0
+        with:
+          maven_goals_phases: "validate"
+          maven_profiles: default
+          maven_args: >
+            -V -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error
       - name: Release with Maven
         uses: samuelmeuli/action-maven-publish@201a45a3f311b2ee888f252ba9f4194257545709 # v1.4.0
         with:
@@ -63,6 +70,7 @@ jobs:
           nexus_password: ${{ secrets.SONATYPE_PASSWORD }}
           maven_profiles: release,${{ secrets.BUILD_PROFILES }}
           maven_args: >
+            -Dsurefire.skipAfterFailureCount=1 -Dfailsafe.skipAfterFailureCount=1
             -Drevision=${{ github.event.release.tag_name }} -DautoReleaseAfterClose=${{ env.AUTORELEASE_ARTIFACT }}
             -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error ${{ secrets.BUILD_PROPERTIES }}
             -DskipNexusStagingDeployMojo=${{ env.SKIP_JAR_DEPLOYMENT }}
