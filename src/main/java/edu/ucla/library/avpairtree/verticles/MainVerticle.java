@@ -1,5 +1,5 @@
 
-package edu.ucla.library.avpairtree.verticles;
+package edu.ucla.library.avpairtree.verticles; // NOPMD - excessive number of imports
 
 import static edu.ucla.library.avpairtree.AvPtConstants.WAVEFORM_CONSUMER;
 
@@ -17,11 +17,10 @@ import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.CsvItemCodec;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
-import edu.ucla.library.avpairtree.handlers.StatusHandler;
 import edu.ucla.library.avpairtree.handlers.AmazonS3WaveformConsumer;
+import edu.ucla.library.avpairtree.handlers.StatusHandler;
 
 import io.methvin.watcher.DirectoryWatcher;
-
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -79,8 +78,8 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(final Promise<Void> aPromise) {
         ConfigRetriever.create(vertx).getConfig()
-            .onSuccess(config -> configureServer(config.mergeIn(config()), aPromise))
-            .onFailure(error -> aPromise.fail(error));
+                .onSuccess(config -> configureServer(config.mergeIn(config()), aPromise))
+                .onFailure(error -> aPromise.fail(error));
     }
 
     @Override
@@ -110,6 +109,7 @@ public class MainVerticle extends AbstractVerticle {
      * @param aConfig A JSON configuration
      * @param aPromise A startup promise
      */
+    @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
     private void configureServer(final JsonObject aConfig, final Promise<Void> aPromise) {
         final int port = aConfig.getInteger(Config.HTTP_PORT, 8888);
         final String host = aConfig.getString(Config.HTTP_HOST, "0.0.0.0");
@@ -169,6 +169,7 @@ public class MainVerticle extends AbstractVerticle {
      * Deploys a supplied verticle.
      *
      * @param aVerticle A verticle to deploy
+     * @param aConfig A verticle configuration
      * @return A future where the verticle has, hopefully, been deployed
      */
     private Future<Void> deployVerticle(final Verticle aVerticle, final JsonObject aConfig) {
@@ -212,7 +213,6 @@ public class MainVerticle extends AbstractVerticle {
      *
      * @param aVerticleName A verticle name
      * @param aDeploymentID A deployment ID for the supplied verticle name
-     * @param aNextVerticle The next verticle to deploy
      * @return A future with the next verticle's deployment ID
      */
     private Future<Void> mapDeploymentID(final String aVerticleName, final String aDeploymentID) {
@@ -234,6 +234,7 @@ public class MainVerticle extends AbstractVerticle {
     /**
      * Starts a watcher that monitors our CSV drop box directory.
      *
+     * @param aConfig An application configuration
      * @return Whether the directory watcher was started successfully
      */
     private Future<Void> startCsvDirWatcher(final JsonObject aConfig) {
@@ -252,6 +253,8 @@ public class MainVerticle extends AbstractVerticle {
                             final DeliveryOptions options = new DeliveryOptions().setSendTimeout(Integer.MAX_VALUE);
                             vertx.eventBus().request(WatcherVerticle.class.getName(), filePath, options);
                         }
+
+                        break;
                     default:
                         // Ignore everything else (e.g., deletions, directory creation, etc.)
                 }

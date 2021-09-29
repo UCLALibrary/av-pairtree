@@ -3,6 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <groupId>edu.ucla.library</groupId>
   <artifactId>av-pairtree</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>A/V Pairtree</name>
@@ -29,18 +30,24 @@
 
   <properties>
     <jave.version>3.0.1</jave.version>
-    <vertx.version>4.0.3</vertx.version>
+    <vertx.version>4.1.4</vertx.version>
     <csveed.version>0.7.1</csveed.version>
     <pairtree.version>0.0.0</pairtree.version> <!-- pre-release version -->
     <s3.service.version>0.0.0</s3.service.version> <!-- pre-release version -->
     <slf4j.ext.version>1.7.30</slf4j.ext.version>
     <dir.watcher.version>0.15.0</dir.watcher.version>
     <freelib.utils.version>2.3.0</freelib.utils.version>
-    <awssdk.version>2.15.15</awssdk.version>
+    <awssdk.version>2.17.41</awssdk.version>
+
+    <!-- Inherited dependencies only pulled in for security fixes -->
+    <commons.codec.version>1.13</commons.codec.version>
+    <netty.version>4.1.68.Final</netty.version>
 
     <!-- Build plugin versions -->
+    <snyk.plugin.version>2.0.0</snyk.plugin.version>
     <vertx.plugin.version>1.0.23</vertx.plugin.version>
     <freelib.maven.version>0.1.2</freelib.maven.version>
+
     <!-- (running with Failsafe 3.0.0-M5 causes an IllegalAccessError during the integration-test phase) -->
     <maven.failsafe.plugin.version>2.18.1</maven.failsafe.plugin.version>
 
@@ -74,6 +81,19 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- Dependencies only pulled in for security fixes -->
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${commons.codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+
+    <!-- Regular dependencies -->
     <dependency>
       <groupId>info.freelibrary</groupId>
       <artifactId>freelib-utils</artifactId>
@@ -118,6 +138,12 @@
       <groupId>info.freelibrary</groupId>
       <artifactId>vertx-pairtree</artifactId>
       <version>${pairtree.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>info.freelibrary</groupId>
+          <artifactId>freelib-utils</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>ws.schild</groupId>
@@ -221,10 +247,6 @@
         <artifactId>build-helper-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>info.freelibrary</groupId>
-        <artifactId>freelib-maven-plugins</artifactId>
-      </plugin>
-      <plugin>
         <artifactId>maven-pmd-plugin</artifactId>
       </plugin>
       <plugin>
@@ -243,6 +265,10 @@
       </plugin>
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>info.freelibrary</groupId>
+        <artifactId>freelib-maven-plugins</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -347,6 +373,13 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>net.revelc.code.formatter</groupId>
+        <artifactId>formatter-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
@@ -460,10 +493,22 @@
       </build>
     </profile>
   </profiles>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>6.7.2</version>
+    <version>7.0.1</version>
   </parent>
 
 </project>

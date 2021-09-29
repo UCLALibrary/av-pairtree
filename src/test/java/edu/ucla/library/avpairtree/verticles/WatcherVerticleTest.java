@@ -174,7 +174,7 @@ public class WatcherVerticleTest extends AbstractAvPtTest {
     /**
      * Confirms the found item matches the expected item.
      *
-     * @param aExpectedFile An expected file
+     * @param aExpectedFilePath An expected file
      * @param aFound A found item
      * @return True if the items match; else, false
      */
