@@ -21,10 +21,12 @@ function festerize_ {
     # Runs the CSV at the provided path (piped to stdin) through festerize (using the base URL provided via $1) and
     # outputs the path of the result CSV
     read -r csv_filename &&
-    yes |
     2>/dev/null 1>&2 \
-    festerize --iiif-api-version 3 --server "$1" --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" "${csv_filename}" &&
-    echo $(strip_trailing_slash "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}")/$(basename "${csv_filename}")
+    festerize --iiif-api-version 3 --server "$1" --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" "${csv_filename}" <<< "y"
+    if [[ $? -eq 0 ]]
+    then
+        echo $(strip_trailing_slash "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}")/$(basename "${csv_filename}")
+    fi
 }
 
 function send_slack_notification {
