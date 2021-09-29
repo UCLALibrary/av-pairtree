@@ -35,9 +35,9 @@ function send_slack_notification {
     read -r csv_filename
     if [[ -n $csv_filename ]]
     then
-        message="Input CSV $1 was updated successfully, and after Festerizing with $2 is now available at ${csv_filename}."
+        message="Input CSV \`$1\` was updated successfully, and after Festerizing with $2 is now available at \`${csv_filename}\`."
     else
-        message="Input CSV $1 could not be processed. See server logs for details."
+        message="Input CSV \`$1\` could not be processed. See server logs for details."
     fi
     curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"${message}\"}" "${AVPTDP_SLACK_WEBHOOK_URL}"
     echo "${message}"
