@@ -22,7 +22,7 @@ function festerize_ {
     # outputs the path of the result CSV
     read -r csv_filename &&
     2>/dev/null 1>&2 \
-    festerize --iiif-api-version 3 --server "$1" --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" "${csv_filename}" <<< "y"
+    festerize --strict-mode --iiif-api-version 3 --server "$1" --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" "${csv_filename}" <<< "y"
     if [[ $? -eq 0 ]]
     then
         echo $(strip_trailing_slash "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}")/$(basename "${csv_filename}")

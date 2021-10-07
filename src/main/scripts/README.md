@@ -15,7 +15,7 @@ Dependencies:
 - ffmpeg
 - [inotifywait](https://github.com/inotify-tools/inotify-tools)
 - [UCLALibrary/services-metagetter](https://github.com/UCLALibrary/services-metagetter)
-- [UCLALibrary/festerize](https://github.com/UCLALibrary/festerize)
+- [UCLALibrary/festerize](https://github.com/UCLALibrary/festerize) 0.4.0 or greater
 
 ### Usage
 
