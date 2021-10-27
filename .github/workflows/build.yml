@@ -17,6 +17,8 @@ jobs:
       AWS_DEFAULT_REGION: us-west-2
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       MAVEN_CACHE_KEY: ${{ secrets.MAVEN_CACHE_KEY }}
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      UCLALIBRARY_SNYK_ORG: ${{ secrets.UCLALIBRARY_SNYK_ORG }}
     strategy:
       matrix:
         java: [ 11, 12 ]
@@ -42,20 +44,20 @@ jobs:
         if: ${{ env.MAVEN_CACHE_KEY }}
         with:
           path: ~/.m2
-          key: maven-cache-${{ secrets.MAVEN_CACHE_KEY }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: maven-cache-${{ secrets.MAVEN_CACHE_KEY }}-
+          key: uclalibrary-cache-${{ secrets.MAVEN_CACHE_KEY }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: uclalibrary-cache-${{ secrets.MAVEN_CACHE_KEY }}-
       - name: Install local dependencies
         uses: samuelmeuli/action-maven-publish@201a45a3f311b2ee888f252ba9f4194257545709 # v1.4.0
         with:
           maven_goals_phases: "validate"
           maven_profiles: default
           maven_args: >
-            -V -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error
+            -V -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error -Dsnyk.skip=${{ secrets.SKIP_SNYK }}
       - name: Build with Maven
         uses: samuelmeuli/action-maven-publish@201a45a3f311b2ee888f252ba9f4194257545709 # v1.4.0
         with:
           maven_goals_phases: "verify"
           maven_profiles: default
           maven_args: >
-            -V -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error
+            -V -ntp -Dorg.slf4j.simpleLogger.log.net.sourceforge.pmd=error -Dsnyk.skip=${{ secrets.SKIP_SNYK }}
             -Dsurefire.skipAfterFailureCount=1 -Dfailsafe.skipAfterFailureCount=1
