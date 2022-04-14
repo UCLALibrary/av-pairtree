@@ -30,7 +30,7 @@
 
   <properties>
     <jave.version>3.0.1</jave.version>
-    <vertx.version>4.1.4</vertx.version>
+    <vertx.version>4.2.7</vertx.version>
     <csveed.version>0.7.1</csveed.version>
     <pairtree.version>0.0.0</pairtree.version> <!-- pre-release version -->
     <s3.service.version>0.0.0</s3.service.version> <!-- pre-release version -->
@@ -407,6 +407,7 @@
                 <configuration>
                   <args>
                     <arg>--org=${env.UCLALIBRARY_SNYK_ORG}</arg>
+                    <arg>--fail-on=all</arg>
                   </args>
                 </configuration>
               </execution>
@@ -418,6 +419,7 @@
                 <configuration>
                   <args>
                     <arg>--org=${env.UCLALIBRARY_SNYK_ORG}</arg>
+                    <arg>--fail-on=all</arg>
                   </args>
                 </configuration>
               </execution>
@@ -550,7 +552,7 @@
   <parent>
     <artifactId>freelib-parent</artifactId>
     <groupId>info.freelibrary</groupId>
-    <version>7.1.2</version>
+    <version>7.2.2</version>
   </parent>
 
 </project>

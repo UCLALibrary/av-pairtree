@@ -109,7 +109,7 @@ public class MainVerticle extends AbstractVerticle {
      * @param aConfig A JSON configuration
      * @param aPromise A startup promise
      */
-    @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
+    @SuppressWarnings({ "PMD.AvoidUsingHardCodedIP", "PMD.CognitiveComplexity" })
     private void configureServer(final JsonObject aConfig, final Promise<Void> aPromise) {
         final int port = aConfig.getInteger(Config.HTTP_PORT, 8888);
         final String host = aConfig.getString(Config.HTTP_HOST, "0.0.0.0");

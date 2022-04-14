@@ -126,7 +126,7 @@ public class WatcherVerticle extends AbstractVerticle {
      * @param aWaveformMap A map of ARKs to audiowaveform URLs for the items that have been processed
      * @return The path of the new CSV file
      */
-    @SuppressWarnings("PMD.ExcessiveMethodLength")
+    @SuppressWarnings({ "PMD.ExcessiveMethodLength", "PMD.CognitiveComplexity" })
     private Future<String> updateCSV(final String aCsvFilePath, final Map<String, CsvItem> aCsvItemMap,
             final JsonObject aWaveformMap) {
         final String newCsvPath = FileUtils.stripExt(aCsvFilePath) + ".out"; // Would be re-watched if ext was .csv
@@ -169,15 +169,14 @@ public class WatcherVerticle extends AbstractVerticle {
                         // IIIF Access URL exists, but not Waveform; expand CSV by one column
                         rowSize = originalRowSize + 1;
                         accessUrlIndex = originalAccessUrlIndex;
-                        waveformIndex = rowSize - 1;
                     } else {
                         // Neither IIIF Access URL or Waveform exist in the CSV yet (Waveform cannot possibly exist
                         // without IIIF Access URL); expand CSV by two columns
                         rowSize = originalRowSize + 2;
                         accessUrlIndex = rowSize - 2;
-                        waveformIndex = rowSize - 1;
                     }
 
+                    waveformIndex = rowSize - 1;
                     headerRow = new String[rowSize];
 
                     for (int index = 0; index < rowSize; index++) {
@@ -205,13 +204,11 @@ public class WatcherVerticle extends AbstractVerticle {
                         if (accessUrlIndex == index) {
                             if (aCsvItemMap.containsKey(ark)) {
                                 row[index] = constructAccessURL(csvItem);
+                            } else if (originalAccessUrlIndex != -1) {
+                                // Don't overwrite what was already there (e.g. in the case of images)
+                                row[index] = originalRow.get(index + 1);
                             } else {
-                                if (originalAccessUrlIndex != -1) {
-                                    // Don't overwrite what was already there (e.g. in the case of images)
-                                    row[index] = originalRow.get(index + 1);
-                                } else {
-                                    row[index] = "";
-                                }
+                                row[index] = "";
                             }
                         } else if (waveformIndex == index) {
                             row[index] = aWaveformMap.getString(ark, "");
@@ -304,14 +301,19 @@ public class WatcherVerticle extends AbstractVerticle {
         // We allow up to three path substitutions, with the Pairtree path being able to be swapped into any of them
         switch (substitutionCount) {
             case 3:
-                if (aUrlPatternIdIndex == 1) {
-                    return StringUtils.format(aAccessUrlPattern, aIdPath, SUBSTITUTION_PATTERN, SUBSTITUTION_PATTERN);
-                } else if (aUrlPatternIdIndex == 2) {
-                    return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, aIdPath, SUBSTITUTION_PATTERN);
-                } else if (aUrlPatternIdIndex == 3) {
-                    return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, SUBSTITUTION_PATTERN, aIdPath);
-                } else {
-                    throw new IndexOutOfBoundsException(LOGGER.getMessage(MessageCodes.AVPT_013, aUrlPatternIdIndex));
+                switch (aUrlPatternIdIndex) {
+                    case 1:
+                        return StringUtils.format(aAccessUrlPattern, aIdPath, SUBSTITUTION_PATTERN,
+                                SUBSTITUTION_PATTERN);
+                    case 2:
+                        return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, aIdPath,
+                                SUBSTITUTION_PATTERN);
+                    case 3:
+                        return StringUtils.format(aAccessUrlPattern, SUBSTITUTION_PATTERN, SUBSTITUTION_PATTERN,
+                                aIdPath);
+                    default:
+                        throw new IndexOutOfBoundsException(
+                                LOGGER.getMessage(MessageCodes.AVPT_013, aUrlPatternIdIndex));
                 }
             case 2:
                 if (aUrlPatternIdIndex == 1) {
