@@ -3,7 +3,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS' (UTC+0)'", UTC} [%level] %logger{45}:%X{line} | %msg%n</pattern>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS, ${log.tz}} ${log.tz} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -13,7 +13,7 @@
     <maxHistory>30</maxHistory>
     <append>true</append>
     <encoder>
-      <pattern>%date{"HH:mm:ss.SSS' (UTC+0)'", UTC} [%level] %logger{45}:%X{line} | %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS, ${log.tz}} ${log.tz} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
