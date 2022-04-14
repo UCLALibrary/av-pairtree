@@ -3,18 +3,17 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%level] %logger{45}:%X{line} | %msg%n</pattern>
+      <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss.SSS' (UTC+0)'", UTC} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
   <!-- A log file for users -->
   <appender name="FILE" class="ch.qos.logback.core.RollingFileAppender">
     <fileNamePattern>logs/av-pairtree-errors-%d.log</fileNamePattern>
-    <immediateFlush>true</immediateFlush>
     <maxHistory>30</maxHistory>
     <append>true</append>
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%level] %logger{45}:%X{line} | %msg%n</pattern>
+      <pattern>%date{"HH:mm:ss.SSS' (UTC+0)'", UTC} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
