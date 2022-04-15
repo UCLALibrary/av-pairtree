@@ -1,23 +1,23 @@
 <configuration debug="false">
   <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
-  <timestamp key="timestamp" datePattern="yyyyMMdd'T'HHmmss" />
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>[%level] %logger{45}:%X{line} | %msg%n</pattern>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS, ${log.tz}} ${log.tz} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
   <!-- A log file for users -->
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>logs/avpt-errors-${timestamp}.log</file>
-    <immediateFlush>true</immediateFlush>
+  <appender name="FILE" class="ch.qos.logback.core.RollingFileAppender">
+    <fileNamePattern>logs/av-pairtree-errors-%d.log</fileNamePattern>
+    <maxHistory>30</maxHistory>
     <append>true</append>
     <encoder>
-      <pattern>[%level] %logger{45}:%X{line} | %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS, ${log.tz}} ${log.tz} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
   </appender>
 
+  <!-- Log just errors to a separate log file so they're easier to find -->
   <logger name="edu.ucla.library.avpairtree" level="ERROR" additivity="false">
     <appender-ref ref="FILE" />
   </logger>
