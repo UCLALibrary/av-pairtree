@@ -1,8 +1,6 @@
 
 package edu.ucla.library.avpairtree.verticles;
 
-import static edu.ucla.library.avpairtree.AvPtConstants.SYSTEM_TMP_DIR;
-
 import java.nio.file.Path;
 
 import info.freelibrary.util.Constants;
@@ -21,6 +19,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonObject;
+
 import ws.schild.jave.Encoder;
 import ws.schild.jave.MultimediaObject;
 import ws.schild.jave.encode.AudioAttributes;
@@ -32,9 +31,9 @@ import ws.schild.jave.encode.EncodingAttributes;
 public class ConverterVerticle extends AbstractVerticle {
 
     /**
-     * A scratch space into which to write converted audio files.
+     * The prefix of the scratch space into which to write converted audio files.
      */
-    public static final String SCRATCH_SPACE = "av-pairtree-";
+    public static final String SCRATCH_SPACE_PREFIX = "av-pairtree-";
 
     /**
      * The logger used for messages from the ConverterVerticle.
@@ -65,6 +64,11 @@ public class ConverterVerticle extends AbstractVerticle {
      * The default file encoding format.
      */
     private static final String DEFAULT_ENCODING_FORMAT = "mp4";
+
+    /**
+     * The path to the temporary scratch space for converted media files.
+     */
+    private String myScratchSpace;
 
     @Override
     public void start(final Promise<Void> aPromise) {
@@ -121,8 +125,11 @@ public class ConverterVerticle extends AbstractVerticle {
         });
 
         // Create an temporary scratch space for converted media files
-        vertx.fileSystem().createTempDirectory(SCRATCH_SPACE).onSuccess(result -> {
+        vertx.fileSystem().createTempDirectory(SCRATCH_SPACE_PREFIX).onSuccess(result -> {
             LOGGER.debug(MessageCodes.AVPT_005, result);
+
+            myScratchSpace = result;
+
             aPromise.complete();
         }).onFailure(error -> aPromise.fail(error));
     }
@@ -138,6 +145,6 @@ public class ConverterVerticle extends AbstractVerticle {
         final String baseFileName = FileUtils.stripExt(aInputFilePath.getFileName().toString());
         final String outputFileName = baseFileName + Constants.PERIOD + aOutputFormat;
 
-        return Path.of(SYSTEM_TMP_DIR, SCRATCH_SPACE, outputFileName);
+        return Path.of(myScratchSpace, outputFileName);
     }
 }

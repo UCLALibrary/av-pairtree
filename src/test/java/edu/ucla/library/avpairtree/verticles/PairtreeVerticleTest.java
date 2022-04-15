@@ -1,7 +1,6 @@
 
 package edu.ucla.library.avpairtree.verticles;
 
-import static edu.ucla.library.avpairtree.AvPtConstants.SYSTEM_TMP_DIR;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Path;
@@ -75,15 +74,8 @@ public class PairtreeVerticleTest extends AbstractAvPtTest {
         final Vertx vertx = myContext.vertx();
         final CsvItem csvItem = new CsvItem();
         final FileSystem fileSystem = vertx.fileSystem();
-        final String scratchSpace = Path.of(SYSTEM_TMP_DIR, ConverterVerticle.SCRATCH_SPACE).toString();
+        final String scratchSpace = fileSystem.createTempDirectoryBlocking(ConverterVerticle.SCRATCH_SPACE_PREFIX);
         final String filePath = Path.of(scratchSpace, "uclapasc.mp4").toString();
-
-        if (fileSystem.existsBlocking(filePath)) {
-            fileSystem.deleteBlocking(filePath);
-        }
-
-        // Make sure our scratch space exists
-        fileSystem.mkdirsBlocking(scratchSpace);
 
         // Copy our test fixture to an absolute path (similar to what our converter does, but this doesn't convert)
         fileSystem.copyBlocking("src/test/resources/soul/audio/uclapasc.wav", filePath);
