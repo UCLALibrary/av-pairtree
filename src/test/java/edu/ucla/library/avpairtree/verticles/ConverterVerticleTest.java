@@ -1,10 +1,7 @@
 
 package edu.ucla.library.avpairtree.verticles;
 
-import static edu.ucla.library.avpairtree.AvPtConstants.SYSTEM_TMP_DIR;
-import static org.junit.Assert.assertEquals;
-
-import java.nio.file.Path;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,10 +46,13 @@ public class ConverterVerticleTest extends AbstractAvPtTest {
             csvItem.setFilePath("soul/audio/uclapasc.wav");
 
             vertx.eventBus().<CsvItem>consumer(PairtreeVerticle.class.getName()).handler(message -> {
-                final Path expectedFilePath = Path.of(SYSTEM_TMP_DIR, "av-pairtree-/uclapasc.mp4");
                 final CsvItem found = message.body();
+                final String foundFilePath = found.getFilePath();
 
-                assertEquals(expectedFilePath.toString(), found.getFilePath());
+                assertTrue(foundFilePath.startsWith(System.getProperty("java.io.tmpdir")));
+                assertTrue(foundFilePath.contains(ConverterVerticle.SCRATCH_SPACE_PREFIX));
+                assertTrue(foundFilePath.endsWith("/uclapasc.mp4"));
+
                 message.reply(found);
             });
 
