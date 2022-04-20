@@ -8,7 +8,7 @@
   </appender>
 
   <!-- A log file for users -->
-  <appender name="FILE" class="ch.qos.logback.core.RollingFileAppender">
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <fileNamePattern>logs/av-pairtree-errors-%d.log</fileNamePattern>
     <immediateFlush>true</immediateFlush>
     <maxHistory>30</maxHistory>
