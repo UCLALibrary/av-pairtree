@@ -9,10 +9,11 @@
 
   <!-- A log file for users -->
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <fileNamePattern>logs/av-pairtree-errors-%d.log</fileNamePattern>
-    <immediateFlush>true</immediateFlush>
-    <maxHistory>30</maxHistory>
-    <append>true</append>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>logs/av-pairtree-errors.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <immediateFlush>true</immediateFlush>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
     <encoder>
       <pattern>%d{HH:mm:ss.SSS} [%level] %logger{45}:%X{line} | %msg%n</pattern>
     </encoder>
