@@ -2,7 +2,7 @@
 
 function get_av_metadata {
     # Runs the CSV at the path provided via $1 through services-metagetter and outputs the path of the result CSV
-    2>/dev/null 1>&2 \
+    &> /var/log/av-pairtree/metagetter.log \
     java -jar "${AVPTDP_METAGETTER_JAR_PATH}" \
         "$1" "${AVPTDP_METAGETTER_MEDIA_DIRECTORY}" $(which ffprobe) "${AVPTDP_METAGETTER_OUTPUT_DIRECTORY}" &&
         echo $(strip_trailing_slash "${AVPTDP_METAGETTER_OUTPUT_DIRECTORY}")/$(basename "$1")
@@ -21,7 +21,7 @@ function festerize_ {
     # Runs the CSV at the provided path (piped to stdin) through festerize (using the base URL provided via $1) and
     # outputs the path of the result CSV
     read -r csv_filename &&
-    2>/dev/null 1>&2 \
+    &> /var/log/av-pairtree/festerize.log \
     festerize --strict-mode --iiif-api-version 3 --server "$1" --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" "${csv_filename}" <<< "y"
     if [[ $? -eq 0 ]]
     then
