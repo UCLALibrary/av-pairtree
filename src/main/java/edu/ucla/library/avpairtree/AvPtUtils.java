@@ -10,7 +10,11 @@ import info.freelibrary.util.Constants;
  */
 public final class AvPtUtils {
 
+    /**
+     * Creates a new AVPT utilities.
+     */
     private AvPtUtils() {
+        // This intentionally left empty.
     }
 
     /**
@@ -21,13 +25,12 @@ public final class AvPtUtils {
      * @return A file system path for the input file
      */
     public static Path getInputFilePath(final CsvItem aCsvItem, final String aSourceDir) {
-        final String relativeFilePath = aCsvItem.getFilePath();
+        final String filePath = aCsvItem.getFilePath();
 
         // Use our source folder unless we receive a file path that is absolute
-        if (!relativeFilePath.startsWith(Constants.SLASH)) {
-            return Path.of(aSourceDir, relativeFilePath);
-        } else {
-            return Path.of(relativeFilePath);
+        if (!filePath.startsWith(Constants.SLASH)) {
+            return Path.of(aSourceDir, filePath);
         }
+        return Path.of(filePath);
     }
 }

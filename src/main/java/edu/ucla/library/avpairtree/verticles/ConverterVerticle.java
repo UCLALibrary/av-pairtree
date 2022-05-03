@@ -19,7 +19,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonObject;
-
 import ws.schild.jave.Encoder;
 import ws.schild.jave.MultimediaObject;
 import ws.schild.jave.encode.AudioAttributes;
@@ -84,8 +83,8 @@ public class ConverterVerticle extends AbstractVerticle {
             final CsvItem csvItem = message.body();
 
             try {
-                final Path inputFilePath = AvPtUtils.getInputFilePath(csvItem, sourceDir);
-                final Path outputFilePath = getOutputFilePath(inputFilePath, outputFormat);
+                final Path inputFilePath = AvPtUtils.getInputFilePath(csvItem, sourceDir).toAbsolutePath();
+                final Path outputFilePath = getOutputFilePath(inputFilePath, outputFormat).toAbsolutePath();
                 final EncodingAttributes encoding = new EncodingAttributes();
                 final AudioAttributes audio = new AudioAttributes();
                 final Encoder encoder = new Encoder();
@@ -100,12 +99,12 @@ public class ConverterVerticle extends AbstractVerticle {
                 encoding.setEncodingThreads(config.getInteger(Config.ENCODING_THREADS));
 
                 encoder.encode(new MultimediaObject(inputFilePath.toFile()), outputFilePath.toFile(), encoding);
-                csvItem.setFilePath(outputFilePath.toAbsolutePath().toString());
+                csvItem.setFilePath(outputFilePath.toString());
 
                 // Send our converted file to the Pairtree verticle for placement in the A/V Pairtree
                 vertx.eventBus().request(PairtreeVerticle.class.getName(), csvItem, options).onSuccess(result -> {
                     // Clean up our converted file after it has been successfully put into the Pairtree
-                    vertx.fileSystem().delete(outputFilePath.toAbsolutePath().toString()).onComplete(deletion -> {
+                    vertx.fileSystem().delete(outputFilePath.toString()).onComplete(deletion -> {
                         if (deletion.succeeded()) {
                             // If our scratch space file was cleaned up, report the success back to the watcher
                             message.reply(result.body());
@@ -115,6 +114,13 @@ public class ConverterVerticle extends AbstractVerticle {
                         }
                     });
                 }).onFailure(error -> {
+                    // Don't need to wait for file cleanup to complete to send our fail message; just log error
+                    vertx.fileSystem().delete(outputFilePath.toString()).onComplete(deletion -> {
+                        if (deletion.failed()) {
+                            LOGGER.error(deletion.cause(), deletion.cause().getMessage());
+                        }
+                    });
+
                     LOGGER.error(error, error.getMessage());
                     message.fail(Op.ERROR_CODE, error.getMessage());
                 });
@@ -131,7 +137,7 @@ public class ConverterVerticle extends AbstractVerticle {
             myScratchSpace = result;
 
             aPromise.complete();
-        }).onFailure(error -> aPromise.fail(error));
+        }).onFailure(aPromise::fail);
     }
 
     /**
