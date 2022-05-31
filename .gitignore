@@ -3,6 +3,7 @@
 config.properties
 
 # Maven build artifacts
+logs/
 target/
 src/main/generated
 dependency-reduced-pom.xml

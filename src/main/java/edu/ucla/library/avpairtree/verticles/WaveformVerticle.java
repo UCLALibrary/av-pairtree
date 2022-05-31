@@ -73,28 +73,23 @@ public final class WaveformVerticle extends AbstractVerticle {
                 cmdResult = LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, input);
             }
 
-            if (0 == exitValue) {
+            if (exitValue == 0) {
                 LOGGER.debug(cmdResult);
+
+                mySourceDir = config.getString(Config.SOURCE_DIR);
+                vertx.eventBus().<CsvItem>consumer(getClass().getName()).handler(this::handle);
+
+                aPromise.complete();
             } else {
                 LOGGER.error(cmdResult);
                 aPromise.fail(cmdResult);
-
-                return;
             }
         } catch (final IOException | InterruptedException details) {
             final String startErrorMsg = LOGGER.getMessage(MessageCodes.AVPT_016, cmdline, details);
 
             LOGGER.error(startErrorMsg);
             aPromise.fail(details);
-
-            return;
         }
-
-        mySourceDir = config.getString(Config.SOURCE_DIR);
-
-        vertx.eventBus().<CsvItem>consumer(getClass().getName()).handler(this::handle);
-
-        aPromise.complete();
     }
 
     /**
@@ -112,8 +107,10 @@ public final class WaveformVerticle extends AbstractVerticle {
             getAudiowaveform(audioFilePath).onSuccess(data -> {
                 final String ark = csvItem.getItemARK();
                 final String s3ObjectKey = StringUtils.format(S3_OBJECT_KEY_TEMPLATE, ark);
-                final DeliveryOptions options =
-                        new DeliveryOptions().addHeader("key", s3ObjectKey).addHeader("contentEncoding", "gzip");
+                final DeliveryOptions options = new DeliveryOptions();
+
+                options.addHeader("key", s3ObjectKey).addHeader("contentEncoding", "gzip");
+                options.setSendTimeout(Integer.MAX_VALUE);
 
                 try {
                     final byte[] compressedData = gzip(data);
