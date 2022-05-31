@@ -67,7 +67,7 @@ public final class WaveformVerticle extends AbstractVerticle {
             final int exitValue = which.waitFor();
             final String cmdResult;
 
-            try (final InputStream inStream = which.getInputStream()) {
+            try (InputStream inStream = which.getInputStream()) {
                 final String input = new String(inStream.readAllBytes());
 
                 cmdResult = LOGGER.getMessage(MessageCodes.AVPT_015, cmdline, exitValue, input);
