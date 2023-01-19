@@ -35,6 +35,11 @@ public final class TestConstants {
      */
     public static final String SOUL = "soul_collection_2021_03_22.csv";
 
+    /*
+     * A smaller sample audio CSV
+     */
+    public static final String SOUL_SAMPLE = "job_map_test.csv";
+
     /**
      * The file name property from the JSON message format.
      */
