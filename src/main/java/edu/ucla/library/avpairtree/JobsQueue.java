@@ -21,14 +21,14 @@ public class JobsQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobsQueue.class, MessageCodes.BUNDLE);
 
     /**
+     * Name of shared map
+     */
+    private static final String MY_JOBS_QUEUE = "jobs-queue";
+
+    /**
      * Copy of VertX instance
      */
     private final Vertx myVertx;
-
-     /**
-     * Name of shared map
-     */
-    private final String myJobsQueue = "jobs-queue";
 
     /**
      * Accesses the jobs queue shared data map
@@ -46,7 +46,7 @@ public class JobsQueue {
      * @return A future completing task with the map result
      */
     public Future<Void> addJobToQueue(final CsvItem aItem) {
-        return getSharedMap(myJobsQueue).compose(jobsMap -> {
+        return getSharedMap(MY_JOBS_QUEUE).compose(jobsMap -> {
             return putJobInMap(jobsMap, aItem);
         });
     }
@@ -58,7 +58,7 @@ public class JobsQueue {
      * @return A future completing task with the map result
      */
     public Future<Void> removeJobInQueue(final String aArk) {
-        return getSharedMap(myJobsQueue).compose(map -> {
+        return getSharedMap(MY_JOBS_QUEUE).compose(map -> {
             return getKeys(map).compose(jobs -> {
                 return deleteKeyInMap(map, jobs, aArk);
             });
