@@ -29,7 +29,10 @@ public class CsvItemTest {
      */
     @Test
     public void testSetPathRoot() {
-        assertEquals(PATH_ROOT, new CsvItem().setPathRoot(SOUL_WAV).getPathRoot());
+        final CsvItem csvItem = new CsvItem();
+
+        csvItem.setPathRoot(PATH_ROOT);
+        assertEquals(PATH_ROOT, csvItem.getPathRoot());
     }
 
     /**

@@ -123,6 +123,7 @@ public class MainVerticle extends AbstractVerticle {
 
                 // Associate handlers with operation IDs from the application's OpenAPI specification
                 routerBuilder.operation(Op.GET_STATUS).handler(new StatusHandler(getVertx()));
+                //add for JobsStatusHandler
 
                 // Create the application server
                 myServer = vertx.createHttpServer(serverOptions).requestHandler(routerBuilder.createRouter());

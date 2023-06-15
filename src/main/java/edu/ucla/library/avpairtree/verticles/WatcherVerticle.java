@@ -31,6 +31,7 @@ import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
+import edu.ucla.library.avpairtree.JobsQueue;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -57,10 +58,16 @@ public class WatcherVerticle extends AbstractVerticle {
      */
     private static final String SUBSTITUTION_PATTERN = "{}";
 
+    /**
+     * JobsQueue
+     */
+    private JobsQueue myJobsQueue;
+
     @Override
     public void start(final Promise<Void> aPromise) {
         final DeliveryOptions options = new DeliveryOptions().setSendTimeout(Integer.MAX_VALUE);
         final Vertx vertx = getVertx();
+        myJobsQueue = new JobsQueue(vertx);
         final EventBus eventBus = vertx.eventBus();
 
         // Consume messages containing a path location to an uploaded CSV file
@@ -99,6 +106,8 @@ public class WatcherVerticle extends AbstractVerticle {
                     final Map<String, CsvItem> csvItemMap = results.stream()
                             .filter(result -> result.body().getClass().equals(CsvItem.class)).map(msg -> {
                                 final CsvItem item = (CsvItem) msg.body();
+
+                                myJobsQueue.addJobToQueue(item);
 
                                 LOGGER.info(MessageCodes.AVPT_009, item.getItemARK());
                                 return item;
@@ -204,6 +213,9 @@ public class WatcherVerticle extends AbstractVerticle {
                         if (accessUrlIndex == index) {
                             if (aCsvItemMap.containsKey(ark)) {
                                 row[index] = constructAccessURL(csvItem);
+
+                                myJobsQueue.removeJobInQueue(ark);
+
                             } else if (originalAccessUrlIndex != -1) {
                                 // Don't overwrite what was already there (e.g. in the case of images)
                                 row[index] = originalRow.get(index + 1);

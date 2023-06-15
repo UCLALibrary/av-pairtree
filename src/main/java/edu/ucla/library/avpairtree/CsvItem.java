@@ -1,6 +1,8 @@
 
 package edu.ucla.library.avpairtree;
 
+import java.io.Serializable;
+
 import org.csveed.annotations.CsvCell;
 import org.csveed.annotations.CsvFile;
 import org.csveed.annotations.CsvIgnore;
@@ -19,7 +21,7 @@ import io.vertx.core.json.JsonObject;
  * The required metadata from the supplied CSV file.
  */
 @CsvFile(quote = '"', separator = ',', escape = '"', mappingStrategy = ColumnNameMapper.class)
-public class CsvItem {
+public class CsvItem implements Serializable{
 
     /**
      * The CSV header column for the IIIF access URL. Note that this not used for deserialization; see
@@ -70,6 +72,11 @@ public class CsvItem {
      */
     @CsvIgnore
     private static final String PROCESSING_RESULT = "Processed";
+
+    /**
+     * The <code>serialVersionUID</code> for CsvItem.
+     */
+    private static final long serialVersionUID = -2436320678602312189L;
 
     /**
      * The property mapped to the item ARK column in the CSV file.

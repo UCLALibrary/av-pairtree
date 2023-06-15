@@ -32,5 +32,13 @@
   <entry key="AVPT_024">Must provide an object key for the data</entry>
   <entry key="AVPT_025">The environment variable AWS_ENDPOINT_URL must be set</entry>
   <entry key="AVPT_026">Configuring S3 bucket: {} [region: {}]</entry>
+  <entry key="AVPT_027">Failure to retrieve shared map</entry>
+  <entry key="AVPT_028">Put job in Shared Map failed</entry>
+  <entry key="AVPT_029">Failure to retrieve keys from Sharedmap</entry>
+  <entry key="AVPT_030">Job was not found in sharedMap</entry>
+  <entry key="AVPT_031">Failure to remove job from sharedmap</entry>
+
+
+
 
 </properties>
