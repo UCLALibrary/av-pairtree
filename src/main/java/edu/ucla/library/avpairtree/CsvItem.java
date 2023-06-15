@@ -74,7 +74,7 @@ public class CsvItem implements Serializable{
     private static final String PROCESSING_RESULT = "Processed";
 
     /**
-     * The <code>serialVersionUID</code> for Job.
+     * The <code>serialVersionUID</code> for CsvItem.
      */
     private static final long serialVersionUID = -2436320678602312189L;
 
