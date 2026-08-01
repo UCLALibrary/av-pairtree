@@ -356,7 +356,7 @@
         <configuration>
           <images>
             <image>
-              <name>localstack/localstack</name>
+              <name>localstack/localstack:4.13.1</name>
               <run>
                 <env>
                   <SERVICES>s3</SERVICES>
