@@ -31,6 +31,7 @@ import edu.ucla.library.avpairtree.Config;
 import edu.ucla.library.avpairtree.CsvItem;
 import edu.ucla.library.avpairtree.MessageCodes;
 import edu.ucla.library.avpairtree.Op;
+import edu.ucla.library.avpairtree.RequestQueue;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -57,11 +58,33 @@ public class WatcherVerticle extends AbstractVerticle {
      */
     private static final String SUBSTITUTION_PATTERN = "{}";
 
+    /** The number of concurrent conversions allowed. */
+    private static final int MAX_CONVERSIONS = 1;
+
+    /** The number of concurrent waveform creations allowed. */
+    private static final int MAX_WAVEFORMS = 2;
+
+    /** The number of video processes allowed. */
+    private static final int MAX_VIDEO_PAIRTREE = 4;
+
+    /** The audio conversion queue. */
+    private RequestQueue myConversionQueue;
+
+    /** The waveform generation queue. */
+    private RequestQueue myWaveformQueue;
+
+    /** The video pairtree queue. */
+    private RequestQueue myVideoPairtreeQueue;
+
     @Override
     public void start(final Promise<Void> aPromise) {
         final DeliveryOptions options = new DeliveryOptions().setSendTimeout(Integer.MAX_VALUE);
         final Vertx vertx = getVertx();
         final EventBus eventBus = vertx.eventBus();
+
+        myConversionQueue = new RequestQueue(MAX_CONVERSIONS);
+        myWaveformQueue = new RequestQueue(MAX_WAVEFORMS);
+        myVideoPairtreeQueue = new RequestQueue(MAX_VIDEO_PAIRTREE);
 
         // Consume messages containing a path location to an uploaded CSV file
         eventBus.<String>consumer(getClass().getName()).handler(message -> {
@@ -78,11 +101,19 @@ public class WatcherVerticle extends AbstractVerticle {
                     item.setPathRoot(item.getFilePath());
 
                     if (item.isAudio()) {
-                        // Audio gets converted from wav to a more Web-friendly format, and a waveform file is generated
-                        futures.add(eventBus.<CsvItem>request(ConverterVerticle.class.getName(), item, options));
-                        futures.add(eventBus.<JsonObject>request(WaveformVerticle.class.getName(), item, options));
+                        // Audio gets converted from WAVE to a Web-friendly format + a waveform file is generated
+
+                        futures.add(myConversionQueue.enqueue(
+                                () -> eventBus.<CsvItem>request(ConverterVerticle.class.getName(), item, options))
+                                .map(reply -> (Message<?>) reply));
+
+                        futures.add(myWaveformQueue.enqueue(
+                                () -> eventBus.<JsonObject>request(WaveformVerticle.class.getName(), item, options))
+                                .map(reply -> (Message<?>) reply));
                     } else if (item.isVideo()) { // Videos are already in mp4 format so don't need conversion
-                        futures.add(eventBus.<CsvItem>request(PairtreeVerticle.class.getName(), item, options));
+                        futures.add(myVideoPairtreeQueue.enqueue(
+                                () -> eventBus.<CsvItem>request(PairtreeVerticle.class.getName(), item, options))
+                                .map(reply -> (Message<?>) reply));
                     } // else, ignore
                 });
 
