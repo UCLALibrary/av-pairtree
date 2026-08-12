@@ -9,23 +9,53 @@ function get_av_metadata {
 }
 
 function change_filename_extension {
-    # Change the filename extension of the provided path (piped to stdin) from .out to .csv, since festerize only looks
-    # at .csv files
-    read -r filename_dot_out &&
-    filename_dot_csv=$(sed -e "s/\.out$/.csv/" <<< "${filename_dot_out}")
-    mv "${filename_dot_out}" "${filename_dot_csv}"
-    echo "${filename_dot_csv}"
+    # Change filename ext of the provided path (via stdin) from .out to .csv, since festerize only looks at .csv files
+    if ! read -r filename_dot_out
+    then
+        >&2 echo "change_filename_extension: no input filename received"
+        return 1
+    fi
+
+    filename_dot_csv="${filename_dot_out%.out}.csv"
+
+    if mv -- "${filename_dot_out}" "${filename_dot_csv}"
+    then
+        echo "${filename_dot_csv}"
+    else
+        >&2 echo "change_filename_extension: could not rename ${filename_dot_out} to ${filename_dot_csv}"
+        return 1
+    fi
 }
 
 function festerize_ {
-    # Runs the CSV at the provided path (piped to stdin) through festerize (using the base URL provided via $1) and
-    # outputs the path of the result CSV
-    read -r csv_filename &&
-    &> /var/log/av-pairtree/festerize.log \
-    festerize --strict-mode --iiif-api-version 3 --server "$1" --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" "${csv_filename}" <<< "y"
-    if [[ $? -eq 0 ]]
+    source /opt/av-pairtree/src/main/scripts/.env
+
+    if ! read -r csv_filename || [[ -z "${csv_filename}" ]]
     then
-        echo $(strip_trailing_slash "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}")/$(basename "${csv_filename}")
+        echo "Festerize was not run: no CSV filename received from prior pipeline step" \
+            >> /var/log/av-pairtree/festerize.log
+        return 1
+    fi
+
+    if festerize --strict-mode --iiif-api-version 3 \
+        --server "$1" \
+        --out "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}" \
+        "${csv_filename}" <<< "y" \
+        &>> /var/log/av-pairtree/festerize.log
+    then
+        output_csv="$(strip_trailing_slash "${AVPTDP_FESTERIZE_OUTPUT_DIRECTORY}")/$(basename "${csv_filename}")"
+
+        if [[ -f "${output_csv}" ]]
+        then
+            echo "${output_csv}"
+        else
+            echo "Festerize returned success, but expected output was not found: ${output_csv}" \
+                >> /var/log/av-pairtree/festerize.log
+        fi
+    else
+        exit_code=$?
+        echo "Festerize failed for ${csv_filename}; exit code: ${exit_code}" \
+            >> /var/log/av-pairtree/festerize.log
     fi
 }
 
@@ -105,6 +135,8 @@ while read -r date time dir file; do
     case "${file}" in
         *.out)
             abs_path="${dir}${file}"
+            echo "Script triggered to further process: ${abs_path}" \
+                >> /var/log/av-pairtree/debug.log
 
             get_av_metadata "${abs_path}" |
             change_filename_extension |
